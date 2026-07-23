@@ -1,0 +1,21 @@
+﻿# Workspace members are split by responsibility so the high-privilege helper can reuse domain code without depending on Flutter or UI concepts.
+[workspace]
+resolver = "2"
+members = [
+  "rust/core",
+  "rust/ffi",
+  "rust/helper",
+  "rust/scanner",
+  "rust/cleaner",
+  "rust/wechat",
+  "rust/app_inventory",
+  "rust/migrator",
+  "rust/quarantine",
+  "rust/rules",
+  "rust/windows_api",
+  "rust/protocol",
+]
+
+[workspace.package]
+edition = "2021"
+license = "Proprietary"

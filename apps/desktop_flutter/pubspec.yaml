@@ -1,0 +1,23 @@
+﻿name: c_drive_manager
+description: "C 盘管家 Windows desktop client."
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.10.1
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    # Local copy of the brand mark keeps the desktop Flutter package self-contained.
+    - assets/images/logo.png

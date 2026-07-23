@@ -1,0 +1,194 @@
+{
+  "format": "PNG RGBA",
+  "background": "transparent",
+  "pages": {
+    "01_首页清理": {
+      "source_design": "exec-05e11832-b83c-454a-b033-b0d42cfd7fa4.png",
+      "assets": [
+        "logo.png",
+        "privacy_shield.png",
+        "system_files.png",
+        "app_cache.png",
+        "recycle_bin.png",
+        "recent_task.png"
+      ]
+    },
+    "02_应用迁移": {
+      "source_design": "exec-20a90e73-7696-4007-9a15-80ab37cf56dd.png",
+      "assets": [
+        "logo.png",
+        "photoshop.png",
+        "wechat.png",
+        "7zip.png",
+        "notepad_plus.png",
+        "defender.png",
+        "migration_safe.png",
+        "migration_warning.png",
+        "disk_check.png"
+      ]
+    },
+    "03_微信专清": {
+      "source_design": "exec-9be5c406-1ff2-4f7a-997a-8204f3f88b8b.png",
+      "assets": [
+        "logo.png",
+        "privacy_shield.png",
+        "wechat_account.png",
+        "running_cache.png",
+        "logs_updates.png",
+        "chat_images.png",
+        "chat_video.png",
+        "voice_audio.png",
+        "received_files.png",
+        "risk_safe.png",
+        "risk_warning.png",
+        "risk_high.png"
+      ]
+    },
+    "04_系统信息": {
+      "source_design": "exec-cf0acb40-6870-43ce-ba24-12741f982cdc.png",
+      "assets": [
+        "logo.png",
+        "privacy_shield.png",
+        "windows_system.png",
+        "cpu.png",
+        "memory.png",
+        "disk.png",
+        "display.png",
+        "refresh.png"
+      ]
+    },
+    "05_隔离区": {
+      "source_design": "exec-b0c8cc94-c152-4109-9140-4e2498b8a4ed.png",
+      "assets": [
+        "logo.png",
+        "active_quarantine.png",
+        "privacy_shield.png",
+        "open_folder.png",
+        "retained.png",
+        "expiring.png",
+        "pending_cleanup.png",
+        "warning.png"
+      ]
+    },
+    "06_设置_常规": {
+      "source_design": "exec-604116c4-8e3b-4558-8590-859caaaaf552.png",
+      "assets": [
+        "logo.png",
+        "active_settings.png",
+        "general.png",
+        "quarantine_restore.png",
+        "scan_performance.png",
+        "privacy_logs.png",
+        "update.png",
+        "about.png",
+        "notification.png",
+        "folder.png",
+        "scan.png",
+        "privacy.png"
+      ]
+    },
+    "07_设置_隔离与恢复": {
+      "source_design": "exec-c661413a-9ea5-4e71-8601-7631fefe0c75.png",
+      "assets": [
+        "logo.png",
+        "active_section.png",
+        "storage_folder.png",
+        "retention_clock.png",
+        "capacity.png",
+        "restore.png",
+        "permission_shield.png",
+        "status_capacity.png"
+      ]
+    },
+    "08_设置_扫描与性能": {
+      "source_design": "exec-ac90cdab-b994-446b-8d51-ecf7e56aad45.png",
+      "assets": [
+        "logo.png",
+        "active_section.png",
+        "scan_strength.png",
+        "battery.png",
+        "game_mode.png",
+        "file_skip.png",
+        "pause.png",
+        "user_cache.png",
+        "link_guard.png",
+        "app_64bit.png",
+        "cache_cleanup.png"
+      ]
+    },
+    "09_设置_隐私与日志": {
+      "source_design": "exec-c37bf1d0-3218-4bc3-bbf1-776ec30ae7b7.png",
+      "assets": [
+        "logo.png",
+        "active_section.png",
+        "privacy_shield.png",
+        "hide_path.png",
+        "account_privacy.png",
+        "message_privacy.png",
+        "local_only.png",
+        "diagnostics.png",
+        "allowed.png",
+        "forbidden.png",
+        "local_log.png",
+        "permission.png"
+      ]
+    },
+    "10_设置_更新": {
+      "source_design": "exec-9f8194cb-70b2-4a8a-af16-cad4436550db.png",
+      "assets": [
+        "logo.png",
+        "active_section.png",
+        "app_logo_large.png",
+        "update_check.png",
+        "channel.png",
+        "rules.png",
+        "rule_ok.png",
+        "download_folder.png",
+        "proxy.png"
+      ]
+    },
+    "11_设置_关于": {
+      "source_design": "exec-ff44762e-d88b-4cef-9ff2-dbc2a912ad42.png",
+      "assets": [
+        "logo.png",
+        "active_section.png",
+        "app_logo_large.png",
+        "promise_adfree.png",
+        "promise_offline.png",
+        "promise_local.png",
+        "promise_safe.png",
+        "help.png",
+        "privacy_policy.png",
+        "copy_diagnostics.png"
+      ]
+    },
+    "12_清理进行中": {
+      "source_design": "exec-1973d25f-3459-4ff6-a182-b3f860d2491f.png",
+      "assets": [
+        "logo.png",
+        "task_running.png",
+        "step_done.png",
+        "spinner.png",
+        "system_files.png",
+        "app_cache.png",
+        "crash_log.png",
+        "recycle_bin.png",
+        "safety_shield.png"
+      ]
+    },
+    "13_应用迁移进行中": {
+      "source_design": "exec-32520fc9-7194-4896-8a21-26fe79a108d9.png",
+      "assets": [
+        "logo.png",
+        "task_running.png",
+        "step_done.png",
+        "photoshop.png",
+        "7zip.png",
+        "transaction_ok.png",
+        "source_safe.png",
+        "safety_shield.png",
+        "drive_online.png"
+      ]
+    }
+  }
+}

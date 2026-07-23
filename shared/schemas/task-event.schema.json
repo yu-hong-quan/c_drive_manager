@@ -1,0 +1,16 @@
+﻿{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://c-drive-manager.local/schemas/task-event.schema.json",
+  "title": "TaskEvent",
+  "description": "Versioned event envelope shared by Rust Core, Helper IPC, and Flutter. Large task results must be streamed as ordered events instead of returned in one payload.",
+  "type": "object",
+  "required": ["schema_version", "task_id", "seq", "event", "payload"],
+  "properties": {
+    "schema_version": { "type": "integer", "const": 1 },
+    "task_id": { "type": "string", "format": "uuid" },
+    "seq": { "type": "integer", "minimum": 0 },
+    "event": { "type": "string", "minLength": 1 },
+    "payload": { "type": "object" }
+  },
+  "additionalProperties": false
+}
