@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../features/cleanup/cleanup_page.dart';
 import '../features/dashboard/feature_dashboard.dart';
 import '../features/feature_pages.dart';
 import '../theme/app_colors.dart';
@@ -32,7 +33,9 @@ class _ManagerShellState extends State<ManagerShell> {
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.fromLTRB(40, 34, 40, 36),
-                child: FeatureDashboard(page: page),
+                child: _selectedIndex == 0
+                    ? const CleanupPage()
+                    : FeatureDashboard(page: page),
               ),
             ),
           ],
