@@ -2,8 +2,66 @@
 
 #include <optional>
 #include <windows.h>
+#include <shellapi.h>
+
+#include "resource.h"
 
 #include "flutter/generated_plugin_registrant.h"
+
+namespace {
+
+constexpr UINT kTrayIconId = 1;
+constexpr UINT kTrayMessage = WM_APP + 1;
+constexpr UINT kTrayOpenCommand = 40001;
+constexpr UINT kTrayExitCommand = 40002;
+
+void RestoreAppWindow(HWND hwnd) {
+  ShowWindow(hwnd, IsIconic(hwnd) ? SW_RESTORE : SW_SHOWNORMAL);
+  SetForegroundWindow(hwnd);
+}
+
+void AddTrayIcon(HWND hwnd) {
+  NOTIFYICONDATA nid{};
+  nid.cbSize = sizeof(nid);
+  nid.hWnd = hwnd;
+  nid.uID = kTrayIconId;
+  nid.uFlags = NIF_MESSAGE | NIF_ICON | NIF_TIP;
+  nid.uCallbackMessage = kTrayMessage;
+  nid.hIcon = LoadIcon(GetModuleHandle(nullptr), MAKEINTRESOURCE(IDI_APP_ICON));
+  wcscpy_s(nid.szTip, L"C\u76D8\u7BA1\u5BB6");
+  Shell_NotifyIcon(NIM_ADD, &nid);
+}
+
+void RemoveTrayIcon(HWND hwnd) {
+  NOTIFYICONDATA nid{};
+  nid.cbSize = sizeof(nid);
+  nid.hWnd = hwnd;
+  nid.uID = kTrayIconId;
+  Shell_NotifyIcon(NIM_DELETE, &nid);
+}
+
+void ShowTrayMenu(HWND hwnd) {
+  HMENU menu = CreatePopupMenu();
+  AppendMenu(menu, MF_STRING, kTrayOpenCommand, L"\u6253\u5F00 C\u76D8\u7BA1\u5BB6");
+  AppendMenu(menu, MF_SEPARATOR, 0, nullptr);
+  AppendMenu(menu, MF_STRING, kTrayExitCommand, L"\u9000\u51FA");
+
+  POINT cursor{};
+  GetCursorPos(&cursor);
+  SetForegroundWindow(hwnd);
+  const UINT command = TrackPopupMenu(
+      menu, TPM_RETURNCMD | TPM_RIGHTBUTTON | TPM_NONOTIFY, cursor.x, cursor.y,
+      0, hwnd, nullptr);
+  DestroyMenu(menu);
+
+  if (command == kTrayOpenCommand) {
+    RestoreAppWindow(hwnd);
+  } else if (command == kTrayExitCommand) {
+    PostMessage(hwnd, WM_CLOSE, 0, 0);
+  }
+}
+
+}  // namespace
 
 FlutterWindow::FlutterWindow(const flutter::DartProject& project)
     : project_(project) {}
@@ -61,6 +119,7 @@ bool FlutterWindow::OnCreate() {
       });
 
   SetChildContent(flutter_controller_->view()->GetNativeWindow());
+  AddTrayIcon(GetHandle());
 
   flutter_controller_->engine()->SetNextFrameCallback([&]() {
     this->Show();
@@ -75,6 +134,7 @@ bool FlutterWindow::OnCreate() {
 }
 
 void FlutterWindow::OnDestroy() {
+  RemoveTrayIcon(GetHandle());
   if (flutter_controller_) {
     flutter_controller_ = nullptr;
   }
@@ -97,6 +157,14 @@ FlutterWindow::MessageHandler(HWND hwnd, UINT const message,
   }
 
   switch (message) {
+    case kTrayMessage:
+      if (lparam == WM_LBUTTONUP || lparam == WM_LBUTTONDBLCLK) {
+        RestoreAppWindow(hwnd);
+      } else if (lparam == WM_RBUTTONUP || lparam == WM_CONTEXTMENU) {
+        ShowTrayMenu(hwnd);
+      }
+      return 0;
+
     case WM_FONTCHANGE:
       flutter_controller_->engine()->ReloadSystemFonts();
       break;

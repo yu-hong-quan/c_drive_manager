@@ -54,7 +54,7 @@ class TopNavigation extends StatelessWidget {
             ),
             const SizedBox(width: 20),
             WindowCaptionButton(
-              icon: Icons.minimize,
+              icon: Icons.remove,
               tooltip: '最小化',
               onPressed: WindowController.minimize,
             ),
@@ -142,7 +142,7 @@ class WindowCaptionButton extends StatelessWidget {
         child: SizedBox(
           width: 56,
           height: 56,
-          child: Icon(icon, size: 24, color: AppColors.text),
+          child: Center(child: Icon(icon, size: 24, color: AppColors.text)),
         ),
       ),
     );

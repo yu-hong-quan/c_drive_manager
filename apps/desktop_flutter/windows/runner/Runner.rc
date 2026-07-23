@@ -89,13 +89,13 @@ BEGIN
     BEGIN
         BLOCK "040904e4"
         BEGIN
-            VALUE "CompanyName", "com.example" "\0"
-            VALUE "FileDescription", "c_drive_manager" "\0"
+            VALUE "CompanyName", "C盘管家" "\0"
+            VALUE "FileDescription", "C盘管家" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "c_drive_manager" "\0"
-            VALUE "LegalCopyright", "Copyright (C) 2026 com.example. All rights reserved." "\0"
-            VALUE "OriginalFilename", "c_drive_manager.exe" "\0"
-            VALUE "ProductName", "c_drive_manager" "\0"
+            VALUE "InternalName", "C盘管家" "\0"
+            VALUE "LegalCopyright", "Copyright (C) 2026 C盘管家. All rights reserved." "\0"
+            VALUE "OriginalFilename", "C盘管家.exe" "\0"
+            VALUE "ProductName", "C盘管家" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END
