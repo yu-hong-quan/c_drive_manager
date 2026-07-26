@@ -29,10 +29,14 @@ class TopNavigation extends StatelessWidget {
         ),
         child: Row(
           children: [
-            Image.asset('assets/images/logo.png', width: 36, height: 36),
+            SizedBox(
+              width: 36,
+              height: 36,
+              child: Image.asset('assets/images/logo.png', fit: BoxFit.contain),
+            ),
             const SizedBox(width: 12),
             const Text(
-              'C盘管家',
+              'C 盘管家',
               style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700),
             ),
             const SizedBox(width: 28),

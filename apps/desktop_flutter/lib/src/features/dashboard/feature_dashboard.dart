@@ -21,17 +21,10 @@ class FeatureDashboard extends StatelessWidget {
           const SizedBox(height: 10),
           Row(
             children: [
-              const Icon(
-                Icons.verified_user_outlined,
-                color: AppColors.primary,
-                size: 22,
-              ),
+              const Icon(Icons.verified_user_outlined, color: AppColors.primary, size: 22),
               const SizedBox(width: 8),
               Flexible(
-                child: Text(
-                  page.subtitle,
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
+                child: Text(page.subtitle, style: Theme.of(context).textTheme.titleMedium),
               ),
             ],
           ),
@@ -113,10 +106,7 @@ class ResultRow extends StatelessWidget {
               style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
             ),
           ),
-          const Text(
-            '可恢复',
-            style: TextStyle(color: AppColors.muted, fontSize: 15),
-          ),
+          const Text('可恢复', style: TextStyle(color: AppColors.muted, fontSize: 15)),
           const SizedBox(width: 32),
           const RiskPill(label: '安全'),
         ],
@@ -136,15 +126,9 @@ class ActionPanel extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            page.metricLabel,
-            style: const TextStyle(color: AppColors.muted, fontSize: 17),
-          ),
+          Text(page.metricLabel, style: const TextStyle(color: AppColors.muted, fontSize: 17)),
           const SizedBox(height: 8),
-          Text(
-            page.metricValue,
-            style: Theme.of(context).textTheme.displayMedium,
-          ),
+          Text(page.metricValue, style: Theme.of(context).textTheme.displayMedium),
           const SizedBox(height: 24),
           SizedBox(
             width: double.infinity,
@@ -177,10 +161,7 @@ class SafetyCheck extends StatelessWidget {
           const Icon(Icons.check_circle, color: AppColors.primary, size: 22),
           const SizedBox(width: 12),
           Expanded(
-            child: Text(
-              label,
-              style: const TextStyle(fontSize: 15, color: AppColors.text),
-            ),
+            child: Text(label, style: const TextStyle(fontSize: 15, color: AppColors.text)),
           ),
         ],
       ),
@@ -199,10 +180,7 @@ class RecentTaskBar extends StatelessWidget {
         children: [
           Icon(Icons.history, color: AppColors.muted),
           SizedBox(width: 16),
-          Text(
-            '最近任务',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-          ),
+          Text('最近任务', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
           SizedBox(width: 28),
           Icon(Icons.check_circle, color: AppColors.primary, size: 20),
           SizedBox(width: 8),

@@ -16,6 +16,13 @@ class ManagerShell extends StatefulWidget {
 
 class _ManagerShellState extends State<ManagerShell> {
   int _selectedIndex = 0;
+  final ScrollController _pageScrollController = ScrollController();
+
+  @override
+  void dispose() {
+    _pageScrollController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -23,22 +30,33 @@ class _ManagerShellState extends State<ManagerShell> {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: SafeArea(
-        child: Column(
-          children: [
-            TopNavigation(
-              selectedIndex: _selectedIndex,
-              onSelected: (index) => setState(() => _selectedIndex = index),
-            ),
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(40, 34, 40, 36),
-                child: _selectedIndex == 0
-                    ? const CleanupPage()
-                    : FeatureDashboard(page: page),
+      body: DecoratedBox(
+        decoration: BoxDecoration(
+          border: Border.all(color: AppColors.windowBorder),
+        ),
+        child: SafeArea(
+          child: Column(
+            children: [
+              TopNavigation(
+                selectedIndex: _selectedIndex,
+                onSelected: (index) => setState(() => _selectedIndex = index),
               ),
-            ),
-          ],
+              Expanded(
+                child: Scrollbar(
+                  controller: _pageScrollController,
+                  thumbVisibility: true,
+                  child: SingleChildScrollView(
+                    controller: _pageScrollController,
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.fromLTRB(40, 34, 40, 36),
+                    child: _selectedIndex == 0
+                        ? const CleanupPage()
+                        : FeatureDashboard(page: page),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

@@ -6,6 +6,7 @@ class AppColors {
   static const primarySoft = Color(0xFFE4F7F1);
   static const background = Color(0xFFF8FAFA);
   static const border = Color(0xFFE6E9EC);
+  static const windowBorder = Color(0xFFD4DADE);
   static const text = Color(0xFF202326);
   static const muted = Color(0xFF697278);
 }

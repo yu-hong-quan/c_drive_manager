@@ -13,10 +13,10 @@ void main() {
 
     await tester.pumpWidget(const CDriveManagerApp());
 
-    expect(find.text('C盘管家'), findsOneWidget);
+    expect(find.text('C 盘管家'), findsOneWidget);
     expect(find.text('C 盘空间一目了然'), findsOneWidget);
-    expect(find.text('开始安全扫描'), findsOneWidget);
-    expect(find.text('系统临时文件'), findsOneWidget);
+    expect(find.text('开始扫描'), findsOneWidget);
+    expect(find.text('清理计划'), findsOneWidget);
 
     await tester.tap(find.text('微信专清'));
     await tester.pumpAndSettle();

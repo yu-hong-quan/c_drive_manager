@@ -11,7 +11,7 @@ class CDriveManagerApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'C盘管家',
+      title: 'C 盘管家',
       theme: AppTheme.light(),
       home: const ManagerShell(),
     );

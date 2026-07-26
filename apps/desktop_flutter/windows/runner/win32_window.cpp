@@ -135,8 +135,8 @@ bool Win32Window::Create(const std::wstring& title,
   UINT dpi = FlutterDesktopGetDpiForMonitor(monitor);
   double scale_factor = dpi / 96.0;
 
-  // The Flutter UI draws the product navigation itself. The window is fixed-size
-  // to protect the supplied desktop design from arbitrary edge resizing.
+  // Flutter draws the entire title/navigation bar; keep Windows chrome hidden
+  // while preserving taskbar, minimize, maximize, and close semantics.
   constexpr DWORD window_style = WS_POPUP | WS_MINIMIZEBOX | WS_SYSMENU;
   HWND window = CreateWindow(
       window_class, title.c_str(), window_style,
@@ -147,6 +147,17 @@ bool Win32Window::Create(const std::wstring& title,
   if (!window) {
     return false;
   }
+
+  SetWindowLongPtr(window, GWL_STYLE,
+                   GetWindowLongPtr(window, GWL_STYLE) & ~WS_CAPTION);
+  HICON large_icon =
+      LoadIcon(GetModuleHandle(nullptr), MAKEINTRESOURCE(IDI_APP_ICON));
+  SendMessage(window, WM_SETICON, ICON_BIG,
+              reinterpret_cast<LPARAM>(large_icon));
+  SendMessage(window, WM_SETICON, ICON_SMALL,
+              reinterpret_cast<LPARAM>(large_icon));
+  SetWindowPos(window, nullptr, 0, 0, 0, 0,
+               SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
 
   UpdateTheme(window);
 

@@ -16,7 +16,7 @@ add_executable(${BINARY_NAME} WIN32
   "runner.exe.manifest"
 )
 
-# Keep the CMake target ASCII-safe while producing a branded exe name.
+# Keep Flutter's generated target name stable while producing a branded exe.
 set_target_properties(${BINARY_NAME} PROPERTIES OUTPUT_NAME "CDriveManager")
 
 # Apply the standard set of build settings. This can be removed for applications

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/feature_page_data.dart';
 
-/// Mock feature content mirrors the V1 PRD while the native backend is still absent.
+/// Static feature content mirrors the V1 PRD while native modules are wired in.
 const featurePages = <FeaturePageData>[
   FeaturePageData(
     title: 'C 盘空间一目了然',
@@ -36,13 +36,13 @@ const featurePages = <FeaturePageData>[
   ),
   FeaturePageData(
     title: '系统信息',
-    subtitle: '快速查看 CPU、内存、磁盘、系统和显示器信息',
+    subtitle: '快速查看 CPU、内存、硬盘、系统和显示器信息',
     metricLabel: 'C: 可用',
     metricValue: '239 GB',
     actionLabel: '刷新',
     icon: Icons.memory_outlined,
     highlights: ['Windows 11 64 位', '16 GB 内存', 'NTFS 固态硬盘'],
-    checks: ['普通权限读取', '不上传设备信息', '后续支持导出报告'],
+    checks: ['普通权限读取', '不上设备传信息', '后续支持导出报告'],
   ),
   FeaturePageData(
     title: '隔离区',
@@ -62,6 +62,6 @@ const featurePages = <FeaturePageData>[
     actionLabel: '保存设置',
     icon: Icons.settings_outlined,
     highlights: ['开机启动', '扫描强度', '规则更新'],
-    checks: ['路径日志脱敏', '默认离线可用', '不显示广告推送'],
+    checks: ['路径日志脱敏', '默认离线可用', '不显示广告推荐'],
   ),
 ];

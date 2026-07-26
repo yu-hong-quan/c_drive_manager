@@ -28,8 +28,10 @@ void AddTrayIcon(HWND hwnd) {
   nid.uFlags = NIF_MESSAGE | NIF_ICON | NIF_TIP;
   nid.uCallbackMessage = kTrayMessage;
   nid.hIcon = LoadIcon(GetModuleHandle(nullptr), MAKEINTRESOURCE(IDI_APP_ICON));
-  wcscpy_s(nid.szTip, L"C\u76D8\u7BA1\u5BB6");
+  wcscpy_s(nid.szTip, L"C \u76D8\u7BA1\u5BB6");
   Shell_NotifyIcon(NIM_ADD, &nid);
+  nid.uVersion = NOTIFYICON_VERSION_4;
+  Shell_NotifyIcon(NIM_SETVERSION, &nid);
 }
 
 void RemoveTrayIcon(HWND hwnd) {
@@ -42,7 +44,7 @@ void RemoveTrayIcon(HWND hwnd) {
 
 void ShowTrayMenu(HWND hwnd) {
   HMENU menu = CreatePopupMenu();
-  AppendMenu(menu, MF_STRING, kTrayOpenCommand, L"\u6253\u5F00 C\u76D8\u7BA1\u5BB6");
+  AppendMenu(menu, MF_STRING, kTrayOpenCommand, L"\u6253\u5F00 C \u76D8\u7BA1\u5BB6");
   AppendMenu(menu, MF_SEPARATOR, 0, nullptr);
   AppendMenu(menu, MF_STRING, kTrayExitCommand, L"\u9000\u51FA");
 
