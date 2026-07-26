@@ -1,8 +1,8 @@
 #include "flutter_window.h"
 
 #include <optional>
-#include <windows.h>
 #include <shellapi.h>
+#include <windows.h>
 
 #include "resource.h"
 
@@ -14,6 +14,14 @@ constexpr UINT kTrayIconId = 1;
 constexpr UINT kTrayMessage = WM_APP + 1;
 constexpr UINT kTrayOpenCommand = 40001;
 constexpr UINT kTrayExitCommand = 40002;
+const UINT kTaskbarCreatedMessage = RegisterWindowMessage(L"TaskbarCreated");
+
+HICON LoadTrayIcon() {
+  return reinterpret_cast<HICON>(LoadImage(
+      GetModuleHandle(nullptr), MAKEINTRESOURCE(IDI_APP_ICON), IMAGE_ICON,
+      GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON),
+      LR_DEFAULTCOLOR | LR_SHARED));
+}
 
 void RestoreAppWindow(HWND hwnd) {
   ShowWindow(hwnd, IsIconic(hwnd) ? SW_RESTORE : SW_SHOWNORMAL);
@@ -27,9 +35,11 @@ void AddTrayIcon(HWND hwnd) {
   nid.uID = kTrayIconId;
   nid.uFlags = NIF_MESSAGE | NIF_ICON | NIF_TIP;
   nid.uCallbackMessage = kTrayMessage;
-  nid.hIcon = LoadIcon(GetModuleHandle(nullptr), MAKEINTRESOURCE(IDI_APP_ICON));
+  nid.hIcon = LoadTrayIcon();
   wcscpy_s(nid.szTip, L"C \u76D8\u7BA1\u5BB6");
-  Shell_NotifyIcon(NIM_ADD, &nid);
+  if (!Shell_NotifyIcon(NIM_ADD, &nid)) {
+    Shell_NotifyIcon(NIM_MODIFY, &nid);
+  }
   nid.uVersion = NOTIFYICON_VERSION_4;
   Shell_NotifyIcon(NIM_SETVERSION, &nid);
 }
@@ -59,7 +69,7 @@ void ShowTrayMenu(HWND hwnd) {
   if (command == kTrayOpenCommand) {
     RestoreAppWindow(hwnd);
   } else if (command == kTrayExitCommand) {
-    PostMessage(hwnd, WM_CLOSE, 0, 0);
+    DestroyWindow(hwnd);
   }
 }
 
@@ -148,14 +158,9 @@ LRESULT
 FlutterWindow::MessageHandler(HWND hwnd, UINT const message,
                               WPARAM const wparam,
                               LPARAM const lparam) noexcept {
-  // Give Flutter, including plugins, an opportunity to handle window messages.
-  if (flutter_controller_) {
-    std::optional<LRESULT> result =
-        flutter_controller_->HandleTopLevelWindowProc(hwnd, message, wparam,
-                                                      lparam);
-    if (result) {
-      return *result;
-    }
+  if (message == kTaskbarCreatedMessage) {
+    AddTrayIcon(hwnd);
+    return 0;
   }
 
   switch (message) {
@@ -167,6 +172,24 @@ FlutterWindow::MessageHandler(HWND hwnd, UINT const message,
       }
       return 0;
 
+    case WM_CLOSE:
+      // Keep the app reachable from the notification area by default; the
+      // tray menu's exit command still performs a real shutdown.
+      ShowWindow(hwnd, SW_HIDE);
+      return 0;
+  }
+
+  // Give Flutter, including plugins, an opportunity to handle window messages.
+  if (flutter_controller_) {
+    std::optional<LRESULT> result =
+        flutter_controller_->HandleTopLevelWindowProc(hwnd, message, wparam,
+                                                      lparam);
+    if (result) {
+      return *result;
+    }
+  }
+
+  switch (message) {
     case WM_FONTCHANGE:
       flutter_controller_->engine()->ReloadSystemFonts();
       break;

@@ -45,8 +45,6 @@ class TopNavigation extends StatelessWidget {
             ),
             const SizedBox(width: 34),
             Expanded(
-              // Main feature tabs stay with the product area; utility tabs are
-              // visually separated on the right before the window controls.
               child: SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: Row(
@@ -62,7 +60,7 @@ class TopNavigation extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 18),
-            UtilityNavGroup(
+            _UtilityNavGroup(
               items: _utilityItems,
               selectedIndex: selectedIndex,
               onSelected: onSelected,
@@ -70,17 +68,14 @@ class TopNavigation extends StatelessWidget {
             const SizedBox(width: 20),
             WindowCaptionButton(
               icon: Icons.remove,
-              tooltip: '最小化',
               onPressed: WindowController.minimize,
             ),
             WindowCaptionButton(
               icon: Icons.crop_square,
-              tooltip: '最大化/还原',
               onPressed: WindowController.toggleMaximize,
             ),
             WindowCaptionButton(
               icon: Icons.close,
-              tooltip: '关闭',
               onPressed: WindowController.close,
             ),
           ],
@@ -97,9 +92,8 @@ class _NavItem {
   final String label;
 }
 
-class UtilityNavGroup extends StatelessWidget {
-  const UtilityNavGroup({
-    super.key,
+class _UtilityNavGroup extends StatelessWidget {
+  const _UtilityNavGroup({
     required this.items,
     required this.selectedIndex,
     required this.onSelected,
@@ -120,7 +114,7 @@ class UtilityNavGroup extends StatelessWidget {
         child: Row(
           children: [
             for (final item in items)
-              UtilityNavButton(
+              _UtilityNavButton(
                 label: item.label,
                 selected: selectedIndex == item.index,
                 onTap: () => onSelected(item.index),
@@ -132,9 +126,8 @@ class UtilityNavGroup extends StatelessWidget {
   }
 }
 
-class UtilityNavButton extends StatelessWidget {
-  const UtilityNavButton({
-    super.key,
+class _UtilityNavButton extends StatelessWidget {
+  const _UtilityNavButton({
     required this.label,
     required this.selected,
     required this.onTap,
@@ -146,36 +139,7 @@ class UtilityNavButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(4),
-      child: SizedBox(
-        height: 76,
-        width: 112,
-        child: Stack(
-          alignment: Alignment.center,
-          children: [
-            Text(
-              label,
-              style: TextStyle(
-                color: selected ? AppColors.primary : AppColors.text,
-                fontSize: 18,
-                fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-              ),
-            ),
-            Positioned(
-              bottom: 0,
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 180),
-                height: 3,
-                width: selected ? 72 : 0,
-                color: AppColors.primary,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
+    return _TopNavTapTarget(label: label, selected: selected, onTap: onTap);
   }
 }
 
@@ -193,9 +157,28 @@ class NavButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
+    return _TopNavTapTarget(label: label, selected: selected, onTap: onTap);
+  }
+}
+
+class _TopNavTapTarget extends StatelessWidget {
+  const _TopNavTapTarget({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkResponse(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(4),
+      radius: 46,
+      containedInkWell: true,
+      highlightShape: BoxShape.rectangle,
       child: SizedBox(
         height: 76,
         width: 112,
@@ -230,26 +213,23 @@ class WindowCaptionButton extends StatelessWidget {
   const WindowCaptionButton({
     super.key,
     required this.icon,
-    required this.tooltip,
     required this.onPressed,
   });
 
   final IconData icon;
-  final String tooltip;
   final VoidCallback onPressed;
 
   @override
   Widget build(BuildContext context) {
-    return Tooltip(
-      message: tooltip,
-      child: InkWell(
-        onTap: onPressed,
-        borderRadius: BorderRadius.circular(4),
-        child: SizedBox(
-          width: 56,
-          height: 56,
-          child: Center(child: Icon(icon, size: 24, color: AppColors.text)),
-        ),
+    return InkResponse(
+      onTap: onPressed,
+      radius: 28,
+      containedInkWell: true,
+      highlightShape: BoxShape.rectangle,
+      child: SizedBox(
+        width: 56,
+        height: 56,
+        child: Center(child: Icon(icon, size: 24, color: AppColors.text)),
       ),
     );
   }

@@ -38,6 +38,12 @@ int Scale(int source, double scale_factor) {
   return static_cast<int>(source * scale_factor);
 }
 
+HICON LoadAppIcon(int width, int height) {
+  return reinterpret_cast<HICON>(LoadImage(
+      GetModuleHandle(nullptr), MAKEINTRESOURCE(IDI_APP_ICON), IMAGE_ICON,
+      width, height, LR_DEFAULTCOLOR | LR_SHARED));
+}
+
 // Dynamically loads the |EnableNonClientDpiScaling| from the User32 module.
 // This API is only needed for PerMonitor V1 awareness mode.
 void EnableFullDpiSupportIfAvailable(HWND hwnd) {
@@ -96,8 +102,8 @@ const wchar_t* WindowClassRegistrar::GetWindowClass() {
     window_class.cbClsExtra = 0;
     window_class.cbWndExtra = 0;
     window_class.hInstance = GetModuleHandle(nullptr);
-    window_class.hIcon =
-        LoadIcon(window_class.hInstance, MAKEINTRESOURCE(IDI_APP_ICON));
+    window_class.hIcon = LoadAppIcon(GetSystemMetrics(SM_CXICON),
+                                     GetSystemMetrics(SM_CYICON));
     window_class.hbrBackground = 0;
     window_class.lpszMenuName = nullptr;
     window_class.lpfnWndProc = Win32Window::WndProc;
@@ -136,8 +142,9 @@ bool Win32Window::Create(const std::wstring& title,
   double scale_factor = dpi / 96.0;
 
   // Flutter draws the entire title/navigation bar; keep Windows chrome hidden
-  // while preserving taskbar, minimize, maximize, and close semantics.
-  constexpr DWORD window_style = WS_POPUP | WS_MINIMIZEBOX | WS_SYSMENU;
+  // while preserving taskbar and native minimize/maximize semantics.
+  constexpr DWORD window_style =
+      WS_POPUP | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_SYSMENU;
   HWND window = CreateWindow(
       window_class, title.c_str(), window_style,
       Scale(origin.x, scale_factor), Scale(origin.y, scale_factor),
@@ -151,11 +158,13 @@ bool Win32Window::Create(const std::wstring& title,
   SetWindowLongPtr(window, GWL_STYLE,
                    GetWindowLongPtr(window, GWL_STYLE) & ~WS_CAPTION);
   HICON large_icon =
-      LoadIcon(GetModuleHandle(nullptr), MAKEINTRESOURCE(IDI_APP_ICON));
+      LoadAppIcon(GetSystemMetrics(SM_CXICON), GetSystemMetrics(SM_CYICON));
+  HICON small_icon = LoadAppIcon(GetSystemMetrics(SM_CXSMICON),
+                                GetSystemMetrics(SM_CYSMICON));
   SendMessage(window, WM_SETICON, ICON_BIG,
               reinterpret_cast<LPARAM>(large_icon));
   SendMessage(window, WM_SETICON, ICON_SMALL,
-              reinterpret_cast<LPARAM>(large_icon));
+              reinterpret_cast<LPARAM>(small_icon));
   SetWindowPos(window, nullptr, 0, 0, 0, 0,
                SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
 
@@ -194,7 +203,15 @@ Win32Window::MessageHandler(HWND hwnd,
                             WPARAM const wparam,
                             LPARAM const lparam) noexcept {
   switch (message) {
-case WM_DESTROY:
+    case WM_NCCALCSIZE:
+      // Remove the non-client title area even when Windows recalculates the
+      // frame after DPI, maximize, or theme changes.
+      if (wparam == TRUE) {
+        return 0;
+      }
+      break;
+
+    case WM_DESTROY:
       window_handle_ = nullptr;
       Destroy();
       if (quit_on_close_) {

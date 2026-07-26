@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../features/cleanup/cleanup_page.dart';
 import '../features/dashboard/feature_dashboard.dart';
 import '../features/feature_pages.dart';
+import '../features/settings/settings_page.dart';
+import '../features/system_info/system_info_page.dart';
 import '../theme/app_colors.dart';
 import 'top_navigation.dart';
 
@@ -49,9 +51,12 @@ class _ManagerShellState extends State<ManagerShell> {
                     controller: _pageScrollController,
                     physics: const AlwaysScrollableScrollPhysics(),
                     padding: const EdgeInsets.fromLTRB(40, 34, 40, 36),
-                    child: _selectedIndex == 0
-                        ? const CleanupPage()
-                        : FeatureDashboard(page: page),
+                    child: switch (_selectedIndex) {
+                      0 => const CleanupPage(),
+                      3 => const SystemInfoPage(),
+                      5 => const SettingsPage(),
+                      _ => FeatureDashboard(page: page),
+                    },
                   ),
                 ),
               ),
