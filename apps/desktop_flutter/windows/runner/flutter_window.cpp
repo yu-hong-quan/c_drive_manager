@@ -69,6 +69,7 @@ void ShowTrayMenu(HWND hwnd) {
   if (command == kTrayOpenCommand) {
     RestoreAppWindow(hwnd);
   } else if (command == kTrayExitCommand) {
+    RemoveTrayIcon(hwnd);
     DestroyWindow(hwnd);
   }
 }
@@ -123,7 +124,8 @@ bool FlutterWindow::OnCreate() {
           return;
         }
         if (call.method_name() == "close") {
-          PostMessage(hwnd, WM_CLOSE, 0, 0);
+          RemoveTrayIcon(hwnd);
+          DestroyWindow(hwnd);
           result->Success();
           return;
         }
@@ -173,9 +175,10 @@ FlutterWindow::MessageHandler(HWND hwnd, UINT const message,
       return 0;
 
     case WM_CLOSE:
-      // Keep the app reachable from the notification area by default; the
-      // tray menu's exit command still performs a real shutdown.
-      ShowWindow(hwnd, SW_HIDE);
+      // Closing the app is a real exit; remove the notification icon before
+      // destroying the HWND so Windows does not leave a stale tray entry.
+      RemoveTrayIcon(hwnd);
+      DestroyWindow(hwnd);
       return 0;
   }
 
