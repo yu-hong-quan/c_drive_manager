@@ -17,19 +17,23 @@ class TopNavigation extends StatelessWidget {
   static const _utilityItems = [
     _NavItem(index: 4, label: '隔离区'),
     _NavItem(index: 5, label: '设置'),
+    _NavItem(index: 6, label: '关于作者'),
   ];
 
   @override
   Widget build(BuildContext context) {
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = dark ? const Color(0xFFE8ECEF) : AppColors.text;
+    final borderColor = dark ? const Color(0xFF303A3F) : AppColors.border;
     return GestureDetector(
       behavior: HitTestBehavior.translucent,
       onPanStart: (_) => WindowController.startDrag(),
       child: Container(
         height: 76,
         padding: const EdgeInsets.symmetric(horizontal: 28),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          border: Border(bottom: BorderSide(color: AppColors.border)),
+        decoration: BoxDecoration(
+          color: Theme.of(context).cardColor,
+          border: Border(bottom: BorderSide(color: borderColor)),
         ),
         child: Row(
           children: [
@@ -39,9 +43,13 @@ class TopNavigation extends StatelessWidget {
               child: Image.asset('assets/images/logo.png', fit: BoxFit.contain),
             ),
             const SizedBox(width: 12),
-            const Text(
+            Text(
               'C 盘管家',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700),
+              style: TextStyle(
+                color: textColor,
+                fontSize: 24,
+                fontWeight: FontWeight.w700,
+              ),
             ),
             const SizedBox(width: 34),
             Expanded(
@@ -68,14 +76,17 @@ class TopNavigation extends StatelessWidget {
             const SizedBox(width: 20),
             WindowCaptionButton(
               icon: Icons.remove,
+              color: textColor,
               onPressed: WindowController.minimize,
             ),
             WindowCaptionButton(
               icon: Icons.crop_square,
+              color: textColor,
               onPressed: WindowController.toggleMaximize,
             ),
             WindowCaptionButton(
               icon: Icons.close,
+              color: textColor,
               onPressed: WindowController.close,
             ),
           ],
@@ -105,9 +116,12 @@ class _UtilityNavGroup extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final borderColor = Theme.of(context).brightness == Brightness.dark
+        ? const Color(0xFF303A3F)
+        : AppColors.border;
     return DecoratedBox(
-      decoration: const BoxDecoration(
-        border: Border(left: BorderSide(color: AppColors.border)),
+      decoration: BoxDecoration(
+        border: Border(left: BorderSide(color: borderColor)),
       ),
       child: Padding(
         padding: const EdgeInsets.only(left: 14),
@@ -174,6 +188,9 @@ class _TopNavTapTarget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final textColor = Theme.of(context).brightness == Brightness.dark
+        ? const Color(0xFFE8ECEF)
+        : AppColors.text;
     return InkResponse(
       onTap: onTap,
       radius: 46,
@@ -188,7 +205,7 @@ class _TopNavTapTarget extends StatelessWidget {
             Text(
               label,
               style: TextStyle(
-                color: selected ? AppColors.primary : AppColors.text,
+                color: selected ? AppColors.primary : textColor,
                 fontSize: 18,
                 fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
               ),
@@ -213,10 +230,12 @@ class WindowCaptionButton extends StatelessWidget {
   const WindowCaptionButton({
     super.key,
     required this.icon,
+    required this.color,
     required this.onPressed,
   });
 
   final IconData icon;
+  final Color color;
   final VoidCallback onPressed;
 
   @override
@@ -229,7 +248,7 @@ class WindowCaptionButton extends StatelessWidget {
       child: SizedBox(
         width: 56,
         height: 56,
-        child: Center(child: Icon(icon, size: 24, color: AppColors.text)),
+        child: Center(child: Icon(icon, size: 24, color: color)),
       ),
     );
   }

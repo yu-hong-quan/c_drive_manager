@@ -14,6 +14,7 @@ class AppSettings {
     required this.localLogsOnly,
     required this.updateChannel,
     required this.autoCheckRules,
+    required this.themeMode,
   });
 
   factory AppSettings.defaults() {
@@ -28,6 +29,7 @@ class AppSettings {
       localLogsOnly: true,
       updateChannel: 'stable',
       autoCheckRules: false,
+      themeMode: 'light',
     );
   }
 
@@ -49,6 +51,7 @@ class AppSettings {
       updateChannel: json['updateChannel'] as String? ?? defaults.updateChannel,
       autoCheckRules:
           json['autoCheckRules'] as bool? ?? defaults.autoCheckRules,
+      themeMode: json['themeMode'] as String? ?? defaults.themeMode,
     );
   }
 
@@ -62,6 +65,7 @@ class AppSettings {
   final bool localLogsOnly;
   final String updateChannel;
   final bool autoCheckRules;
+  final String themeMode;
 
   AppSettings copyWith({
     bool? launchOnStartup,
@@ -74,6 +78,7 @@ class AppSettings {
     bool? localLogsOnly,
     String? updateChannel,
     bool? autoCheckRules,
+    String? themeMode,
   }) {
     return AppSettings(
       launchOnStartup: launchOnStartup ?? this.launchOnStartup,
@@ -86,6 +91,7 @@ class AppSettings {
       localLogsOnly: localLogsOnly ?? this.localLogsOnly,
       updateChannel: updateChannel ?? this.updateChannel,
       autoCheckRules: autoCheckRules ?? this.autoCheckRules,
+      themeMode: themeMode ?? this.themeMode,
     );
   }
 
@@ -101,6 +107,7 @@ class AppSettings {
       'localLogsOnly': localLogsOnly,
       'updateChannel': updateChannel,
       'autoCheckRules': autoCheckRules,
+      'themeMode': themeMode,
     };
   }
 

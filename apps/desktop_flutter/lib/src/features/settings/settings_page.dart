@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../theme/app_colors.dart';
+import '../../theme/theme_controller.dart';
 import '../../widgets/app_card.dart';
 import 'settings_service.dart';
 
@@ -99,6 +100,7 @@ class _SettingsPageState extends State<SettingsPage> {
           onChanged: (value) =>
               _update(_settings.copyWith(quarantineDays: value)),
         ),
+        _ThemeModeRow(value: _settings.themeMode, onChanged: _updateThemeMode),
       ],
     );
   }
@@ -193,6 +195,15 @@ class _SettingsPageState extends State<SettingsPage> {
     });
   }
 
+  Future<void> _updateThemeMode(String value) async {
+    final next = _settings.copyWith(themeMode: value);
+    setState(() {
+      _settings = next;
+      _message = value == 'dark' ? '已切换到黑夜主题' : '已切换到白天主题';
+    });
+    await AppThemeController.instance.setThemeMode(value);
+  }
+
   Future<void> _save() async {
     setState(() => _saving = true);
     await _service.save(_settings);
@@ -208,6 +219,7 @@ class _SettingsPageState extends State<SettingsPage> {
       _settings = AppSettings.defaults();
       _message = '已恢复默认，保存后生效';
     });
+    AppThemeController.instance.setThemeMode(_settings.themeMode);
   }
 }
 
@@ -316,6 +328,54 @@ class _SwitchRow extends StatelessWidget {
             value: value,
             activeThumbColor: AppColors.primary,
             onChanged: onChanged,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ThemeModeRow extends StatelessWidget {
+  const _ThemeModeRow({required this.value, required this.onChanged});
+
+  final String value;
+  final ValueChanged<String> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = value == 'dark';
+    return Padding(
+      padding: const EdgeInsets.only(top: 4),
+      child: Row(
+        children: [
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '主题模式',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                ),
+                SizedBox(height: 4),
+                Text('切换白天 / 黑夜主题', style: TextStyle(color: AppColors.muted)),
+              ],
+            ),
+          ),
+          SegmentedButton<String>(
+            segments: const [
+              ButtonSegment(
+                value: 'light',
+                icon: Icon(Icons.wb_sunny_outlined),
+                label: Text('白天'),
+              ),
+              ButtonSegment(
+                value: 'dark',
+                icon: Icon(Icons.dark_mode_outlined),
+                label: Text('黑夜'),
+              ),
+            ],
+            selected: {isDark ? 'dark' : 'light'},
+            onSelectionChanged: (values) => onChanged(values.first),
           ),
         ],
       ),

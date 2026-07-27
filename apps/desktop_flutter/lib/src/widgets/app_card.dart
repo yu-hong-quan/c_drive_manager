@@ -14,14 +14,27 @@ class AppCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final dark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: padding,
       decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: AppColors.border),
+        color: Theme.of(context).cardColor,
+        border: Border.all(
+          color: dark ? const Color(0xFF2A3438) : AppColors.border,
+        ),
         borderRadius: BorderRadius.circular(8),
       ),
-      child: child,
+      child: DefaultTextStyle.merge(
+        style: TextStyle(
+          color: dark ? const Color(0xFFE8ECEF) : AppColors.text,
+        ),
+        child: IconTheme.merge(
+          data: IconThemeData(
+            color: dark ? const Color(0xFFE8ECEF) : AppColors.text,
+          ),
+          child: child,
+        ),
+      ),
     );
   }
 }

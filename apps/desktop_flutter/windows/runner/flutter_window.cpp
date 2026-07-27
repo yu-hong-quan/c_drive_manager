@@ -13,7 +13,8 @@ namespace {
 constexpr UINT kTrayIconId = 1;
 constexpr UINT kTrayMessage = WM_APP + 1;
 constexpr UINT kTrayOpenCommand = 40001;
-constexpr UINT kTrayExitCommand = 40002;
+constexpr UINT kTrayHideCommand = 40002;
+constexpr UINT kTrayExitCommand = 40003;
 const UINT kTaskbarCreatedMessage = RegisterWindowMessage(L"TaskbarCreated");
 
 HICON LoadTrayIcon() {
@@ -55,6 +56,7 @@ void RemoveTrayIcon(HWND hwnd) {
 void ShowTrayMenu(HWND hwnd) {
   HMENU menu = CreatePopupMenu();
   AppendMenu(menu, MF_STRING, kTrayOpenCommand, L"\u6253\u5F00 C \u76D8\u7BA1\u5BB6");
+  AppendMenu(menu, MF_STRING, kTrayHideCommand, L"\u6700\u5C0F\u5316\u5230\u540E\u53F0");
   AppendMenu(menu, MF_SEPARATOR, 0, nullptr);
   AppendMenu(menu, MF_STRING, kTrayExitCommand, L"\u9000\u51FA");
 
@@ -68,6 +70,8 @@ void ShowTrayMenu(HWND hwnd) {
 
   if (command == kTrayOpenCommand) {
     RestoreAppWindow(hwnd);
+  } else if (command == kTrayHideCommand) {
+    ShowWindow(hwnd, SW_HIDE);
   } else if (command == kTrayExitCommand) {
     RemoveTrayIcon(hwnd);
     DestroyWindow(hwnd);
@@ -166,13 +170,21 @@ FlutterWindow::MessageHandler(HWND hwnd, UINT const message,
   }
 
   switch (message) {
-    case kTrayMessage:
-      if (lparam == WM_LBUTTONUP || lparam == WM_LBUTTONDBLCLK) {
+    case kTrayMessage: {
+      const UINT tray_event = LOWORD(lparam);
+      // NOTIFYICON_VERSION_4 reports keyboard/left-click activation through
+      // NIN_SELECT/NIN_KEYSELECT, while older shells can still send mouse
+      // button messages. Treat all of them as "open the app".
+      if (tray_event == NIN_SELECT || tray_event == NIN_KEYSELECT ||
+          tray_event == WM_LBUTTONUP || tray_event == WM_LBUTTONDBLCLK ||
+          tray_event == WM_LBUTTONDOWN) {
         RestoreAppWindow(hwnd);
-      } else if (lparam == WM_RBUTTONUP || lparam == WM_CONTEXTMENU) {
+      } else if (tray_event == WM_RBUTTONUP || tray_event == WM_RBUTTONDOWN ||
+                 tray_event == WM_CONTEXTMENU) {
         ShowTrayMenu(hwnd);
       }
       return 0;
+    }
 
     case WM_CLOSE:
       // Closing the app is a real exit; remove the notification icon before

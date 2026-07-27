@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../features/about/about_author_page.dart';
+import '../features/app_migration/app_migration_page.dart';
 import '../features/cleanup/cleanup_page.dart';
 import '../features/dashboard/feature_dashboard.dart';
 import '../features/feature_pages.dart';
@@ -28,13 +30,18 @@ class _ManagerShellState extends State<ManagerShell> {
 
   @override
   Widget build(BuildContext context) {
-    final page = featurePages[_selectedIndex];
+    final page = _selectedIndex < featurePages.length
+        ? featurePages[_selectedIndex]
+        : featurePages.last;
+    final dark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: DecoratedBox(
         decoration: BoxDecoration(
-          border: Border.all(color: AppColors.windowBorder),
+          border: Border.all(
+            color: dark ? const Color(0xFF303A3F) : AppColors.windowBorder,
+          ),
         ),
         child: SafeArea(
           child: Column(
@@ -53,8 +60,10 @@ class _ManagerShellState extends State<ManagerShell> {
                     padding: const EdgeInsets.fromLTRB(40, 34, 40, 36),
                     child: switch (_selectedIndex) {
                       0 => const CleanupPage(),
+                      1 => const AppMigrationPage(),
                       3 => const SystemInfoPage(),
                       5 => const SettingsPage(),
+                      6 => const AboutAuthorPage(),
                       _ => FeatureDashboard(page: page),
                     },
                   ),

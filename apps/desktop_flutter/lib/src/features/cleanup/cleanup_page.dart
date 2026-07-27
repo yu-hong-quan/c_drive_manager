@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../theme/app_colors.dart';
+import '../../widgets/animated_app_dialog.dart';
 import '../../widgets/app_card.dart';
 import 'cleanup_service.dart';
 
@@ -25,12 +26,11 @@ class _CleanupPageState extends State<CleanupPage> {
   String? _activeRuleId;
   CleanupExecutionResult? _lastClean;
 
-  Iterable<CleanupFileItem> get _selectedFiles => _results
-      .expand(
-        (category) => category.files.where(
-          (file) => _selectedKeys.contains(_selectionKey(category.rule.id, file)),
-        ),
-      );
+  Iterable<CleanupFileItem> get _selectedFiles => _results.expand(
+    (category) => category.files.where(
+      (file) => _selectedKeys.contains(_selectionKey(category.rule.id, file)),
+    ),
+  );
 
   int get _totalBytes => _results.fold(0, (sum, item) => sum + item.bytes);
 
@@ -83,11 +83,7 @@ class _CleanupPageState extends State<CleanupPage> {
                   );
                   if (narrow) {
                     return Column(
-                      children: [
-                        table,
-                        const SizedBox(height: 18),
-                        safety,
-                      ],
+                      children: [table, const SizedBox(height: 18), safety],
                     );
                   }
                   return Row(
@@ -145,9 +141,8 @@ class _CleanupPageState extends State<CleanupPage> {
           results
               .where((item) => item.rule.defaultSelected)
               .expand(
-                (item) => item.files.map(
-                  (file) => _selectionKey(item.rule.id, file),
-                ),
+                (item) =>
+                    item.files.map((file) => _selectionKey(item.rule.id, file)),
               ),
         );
       _scanning = false;
@@ -210,7 +205,7 @@ class _CleanupPageState extends State<CleanupPage> {
           selectedCategoryIds.contains(category.rule.id) &&
           category.rule.risk != CleanupRisk.safe,
     );
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showAnimatedAppDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: Text(hasCaution ? '确认清理谨慎项目' : '确认开始清理'),
@@ -264,9 +259,8 @@ class _CleanupPageState extends State<CleanupPage> {
           refreshed
               .where((item) => item.rule.defaultSelected)
               .expand(
-                (item) => item.files.map(
-                  (file) => _selectionKey(item.rule.id, file),
-                ),
+                (item) =>
+                    item.files.map((file) => _selectionKey(item.rule.id, file)),
               ),
         );
       _expandedIds.clear();
@@ -670,12 +664,9 @@ class CleanupCategoryTile extends StatelessWidget {
   onToggleFile;
   final ValueChanged<String> onToggleExpand;
 
-  int get _selectedCount =>
-      item.files
-          .where(
-            (file) => selectedKeys.contains(_selectionKey(item.rule.id, file)),
-          )
-          .length;
+  int get _selectedCount => item.files
+      .where((file) => selectedKeys.contains(_selectionKey(item.rule.id, file)))
+      .length;
 
   @override
   Widget build(BuildContext context) {
@@ -722,10 +713,16 @@ class CleanupCategoryTile extends StatelessWidget {
                       size: 32,
                     ),
                   ),
-                  Expanded(flex: 4, child: _CategoryName(item: item, active: active)),
+                  Expanded(
+                    flex: 4,
+                    child: _CategoryName(item: item, active: active),
+                  ),
                   Expanded(
                     flex: 2,
-                    child: Text(item.rule.source, style: const TextStyle(fontSize: 13)),
+                    child: Text(
+                      item.rule.source,
+                      style: const TextStyle(fontSize: 13),
+                    ),
                   ),
                   Expanded(
                     child: Text(formatBytes(item.bytes), style: _cellStyle),
@@ -734,7 +731,10 @@ class CleanupCategoryTile extends StatelessWidget {
                   Expanded(
                     child: Text(
                       item.rule.recoverable ? '是' : '否',
-                      style: const TextStyle(fontSize: 15, color: AppColors.muted),
+                      style: const TextStyle(
+                        fontSize: 15,
+                        color: AppColors.muted,
+                      ),
                     ),
                   ),
                   SizedBox(width: 86, child: RiskBadge(level: item.rule.risk)),
@@ -1045,7 +1045,10 @@ class SafetyPoint extends StatelessWidget {
               color: AppColors.primarySoft,
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.verified_user_outlined, color: AppColors.primary),
+            child: const Icon(
+              Icons.verified_user_outlined,
+              color: AppColors.primary,
+            ),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -1132,7 +1135,7 @@ class RecentTaskStrip extends StatelessWidget {
 
   void _showRecentTaskDialog(BuildContext context) {
     final result = lastClean;
-    showDialog<void>(
+    showAnimatedAppDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('最近任务'),
@@ -1141,8 +1144,14 @@ class RecentTaskStrip extends StatelessWidget {
             : Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  _TaskMetric(label: '释放空间', value: formatBytes(result.deletedBytes)),
-                  _TaskMetric(label: '成功清理', value: '${result.deletedFiles} 个文件'),
+                  _TaskMetric(
+                    label: '释放空间',
+                    value: formatBytes(result.deletedBytes),
+                  ),
+                  _TaskMetric(
+                    label: '成功清理',
+                    value: '${result.deletedFiles} 个文件',
+                  ),
                   _TaskMetric(label: '失败', value: '${result.failedFiles} 个文件'),
                   _TaskMetric(label: '跳过', value: '${result.skippedFiles} 个文件'),
                 ],
@@ -1171,10 +1180,7 @@ class _TaskMetric extends StatelessWidget {
       child: Row(
         children: [
           Expanded(
-            child: Text(
-              label,
-              style: const TextStyle(color: AppColors.muted),
-            ),
+            child: Text(label, style: const TextStyle(color: AppColors.muted)),
           ),
           Text(
             value,
