@@ -50,6 +50,11 @@ dist\CDriveManager-Setup-1.0.0.exe
 
 用户双击该安装程序，按向导即可安装到电脑（开始菜单可启动，支持卸载）。
 
+卸载方式：
+- 开始菜单 →「卸载 C 盘管家」
+- 安装目录中的 `Uninstall.exe` 或「卸载 C 盘管家」快捷方式
+- Windows「应用和功能」中卸载
+
 **中文路径已支持：** 若安装到含中文的目录，启动时会自动通过 `C:\Users\Public\CDriveManager\run` 目录联接兼容运行（本机已关闭 8.3 短文件名时也能用）。也可直接装到英文路径如 `C:\Program Files\CDriveManager`。
 
 ## 开发阶段进度
