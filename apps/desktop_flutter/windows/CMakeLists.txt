@@ -106,3 +106,10 @@ install(DIRECTORY "${PROJECT_BUILD_DIR}/${FLUTTER_ASSET_DIR_NAME}"
 install(FILES "${AOT_LIBRARY}" DESTINATION "${INSTALL_BUNDLE_DATA_DIR}"
   CONFIGURATIONS Profile;Release
   COMPONENT Runtime)
+
+# 将预构建的 Rust FFI DLL 安装到可执行文件同目录，供 Dart DynamicLibrary 加载。
+set(CDM_FFI_DLL "${CMAKE_CURRENT_SOURCE_DIR}/native/c_drive_manager_ffi.dll")
+if(EXISTS "${CDM_FFI_DLL}")
+  install(FILES "${CDM_FFI_DLL}" DESTINATION "${INSTALL_BUNDLE_LIB_DIR}"
+    COMPONENT Runtime)
+endif()

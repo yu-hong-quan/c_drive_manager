@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../theme/app_colors.dart';
+import '../../theme/ui_assets.dart';
 import '../../widgets/app_card.dart';
 import 'system_info_service.dart';
 
@@ -124,10 +125,12 @@ class _SystemInfoContent extends StatelessWidget {
               children: [
                 _InfoGroupCard(
                   icon: Icons.desktop_windows_outlined,
+                  asset: UiAssets.systemWindows,
                   group: snapshot.system,
                 ),
                 _InfoGroupCard(
                   icon: Icons.memory_outlined,
+                  asset: UiAssets.systemCpu,
                   group: snapshot.cpu,
                 ),
                 _MemoryCard(memory: snapshot.memory),
@@ -144,9 +147,10 @@ class _SystemInfoContent extends StatelessWidget {
 }
 
 class _InfoGroupCard extends StatelessWidget {
-  const _InfoGroupCard({required this.icon, required this.group});
+  const _InfoGroupCard({required this.icon, required this.group, this.asset});
 
   final IconData icon;
+  final String? asset;
   final SystemInfoGroup group;
 
   @override
@@ -156,7 +160,7 @@ class _InfoGroupCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _CardTitle(icon: icon, title: group.title),
+          _CardTitle(icon: icon, asset: asset, title: group.title),
           const SizedBox(height: 16),
           for (final entry in group.values.entries)
             _KeyValue(label: entry.key, value: entry.value),
@@ -178,7 +182,7 @@ class _MemoryCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const _CardTitle(icon: Icons.storage_outlined, title: '内存'),
+          const _CardTitle(icon: Icons.storage_outlined, asset: UiAssets.systemMemory, title: '内存'),
           const SizedBox(height: 16),
           _UsageBar(value: memory.usageRatio),
           const SizedBox(height: 14),
@@ -203,7 +207,7 @@ class _DisplayCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const _CardTitle(icon: Icons.monitor_outlined, title: '显示器'),
+          const _CardTitle(icon: Icons.monitor_outlined, asset: UiAssets.systemDisplay, title: '显示器'),
           const SizedBox(height: 16),
           if (displays.isEmpty)
             const _KeyValue(label: '设备', value: '未知')
@@ -230,7 +234,7 @@ class _DiskSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const _CardTitle(icon: Icons.sd_storage_outlined, title: '磁盘'),
+          const _CardTitle(icon: Icons.sd_storage_outlined, asset: UiAssets.systemDisk, title: '磁盘'),
           const SizedBox(height: 18),
           if (disks.isEmpty)
             const Text('未读取到本地固定磁盘', style: TextStyle(color: AppColors.muted))
@@ -309,16 +313,22 @@ class _UsageBar extends StatelessWidget {
 }
 
 class _CardTitle extends StatelessWidget {
-  const _CardTitle({required this.icon, required this.title});
+  const _CardTitle({required this.icon, required this.title, this.asset});
 
   final IconData icon;
+  final String? asset;
   final String title;
 
   @override
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(icon, color: AppColors.primary, size: 28),
+        UiAssetIcon(
+          asset: asset,
+          fallback: icon,
+          color: AppColors.primary,
+          size: 28,
+        ),
         const SizedBox(width: 10),
         Text(title, style: Theme.of(context).textTheme.headlineSmall),
       ],

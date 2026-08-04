@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 
 import '../../theme/app_colors.dart';
+import '../../theme/ui_assets.dart';
 import '../../widgets/animated_app_dialog.dart';
 import '../../widgets/app_card.dart';
 import '../../widgets/risk_pill.dart';
+import '../../widgets/task_progress_overlay.dart';
+import '../../widgets/task_result_dialog.dart';
 import '../settings/settings_service.dart';
 import 'wechat_service.dart';
 
@@ -164,9 +167,11 @@ class _WechatPageState extends State<WechatPage> {
             ],
           ),
           if (_cleaning)
-            _CleaningOverlay(
+            TaskProgressOverlay(
+              title: '正在清理微信数据',
+              subtitle: '已处理 ${formatWechatBytes(_cleanedBytes)}，可恢复项进入隔离区',
               progress: _cleanProgress,
-              cleanedBytes: _cleanedBytes,
+              icon: Icons.chat_bubble_outline,
             ),
         ],
       ),
@@ -387,6 +392,13 @@ class _WechatPageState extends State<WechatPage> {
         _wechatRunning = true;
         _message = '清理已中止：检测到微信进程（WX_RUNNING）。';
       });
+      await showTaskResultDialog(
+        context: context,
+        kind: TaskResultKind.failure,
+        title: '清理失败',
+        message: '检测到微信仍在运行，已中止清理。请退出微信后重试。',
+        details: const ['错误码：WX_RUNNING'],
+      );
       return;
     }
     if (result.isSpaceInsufficient) {
@@ -396,6 +408,13 @@ class _WechatPageState extends State<WechatPage> {
             '隔离盘空间不足，已停止清理且未永久删除（QUARANTINE_SPACE_INSUFFICIENT）。'
             '请更换隔离位置或减少所选项目。';
       });
+      await showTaskResultDialog(
+        context: context,
+        kind: TaskResultKind.failure,
+        title: '清理失败',
+        message: '隔离盘空间不足，已停止清理且未永久删除。',
+        details: const ['错误码：QUARANTINE_SPACE_INSUFFICIENT', '请更换隔离位置或减少所选项目'],
+      );
       return;
     }
 
@@ -426,6 +445,34 @@ class _WechatPageState extends State<WechatPage> {
           '删除 ${result.deletedFiles} 项，释放 '
           '${formatWechatBytes(result.quarantinedBytes + result.deletedBytes)}';
     });
+    await _showWechatCleanResult(result);
+  }
+
+  Future<void> _showWechatCleanResult(WechatCleanResult result) async {
+    final processed = result.quarantinedFiles + result.deletedFiles;
+    final kind = processed <= 0 && result.failedFiles > 0
+        ? TaskResultKind.failure
+        : (result.failedFiles > 0 || result.skippedFiles > 0
+            ? TaskResultKind.partial
+            : TaskResultKind.success);
+    final title = switch (kind) {
+      TaskResultKind.success => '清理成功',
+      TaskResultKind.partial => '清理完成（部分未处理）',
+      TaskResultKind.failure => '清理失败',
+    };
+    await showTaskResultDialog(
+      context: context,
+      kind: kind,
+      title: title,
+      message:
+          '共释放 ${formatWechatBytes(result.quarantinedBytes + result.deletedBytes)}。',
+      details: [
+        '隔离 ${result.quarantinedFiles} 项',
+        '删除 ${result.deletedFiles} 项',
+        '失败 ${result.failedFiles} 项',
+        '跳过 ${result.skippedFiles} 项',
+      ],
+    );
   }
 }
 
@@ -749,6 +796,12 @@ class _CategoryTile extends StatelessWidget {
                     ? null
                     : (value) => onToggleCategory(item, value ?? false),
               ),
+              UiAssetIcon(
+                asset: UiAssets.wechatCategory(item.rule.id),
+                fallback: Icons.folder_outlined,
+                size: 28,
+              ),
+              const SizedBox(width: 10),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -771,7 +824,10 @@ class _CategoryTile extends StatelessWidget {
                   ],
                 ),
               ),
-              RiskPill(label: wechatRiskLabel(item.rule.risk)),
+              RiskPill(
+                label: wechatRiskLabel(item.rule.risk),
+                asset: UiAssets.riskBadge(item.rule.risk.name),
+              ),
               const SizedBox(width: 12),
               Text(
                 formatWechatBytes(item.bytes),
@@ -896,94 +952,6 @@ class _SidePanel extends StatelessWidget {
             ),
           ],
         ],
-      ),
-    );
-  }
-}
-
-class _CleaningOverlay extends StatelessWidget {
-  const _CleaningOverlay({
-    required this.progress,
-    required this.cleanedBytes,
-  });
-
-  final double progress;
-  final int cleanedBytes;
-
-  @override
-  Widget build(BuildContext context) {
-    final percent = (progress * 100).clamp(0, 100).round();
-    return Positioned(
-      top: 18,
-      right: 18,
-      child: IgnorePointer(
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            color: Colors.white.withAlpha(238),
-            border: Border.all(color: AppColors.border),
-            borderRadius: BorderRadius.circular(8),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x1F000000),
-                blurRadius: 18,
-                offset: Offset(0, 8),
-              ),
-            ],
-          ),
-          child: SizedBox(
-            width: 320,
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Row(
-                children: [
-                  SizedBox(
-                    width: 56,
-                    height: 56,
-                    child: Stack(
-                      fit: StackFit.expand,
-                      children: [
-                        CircularProgressIndicator(
-                          value: progress.clamp(0.02, 1.0).toDouble(),
-                          strokeWidth: 5,
-                          backgroundColor: AppColors.border,
-                          color: AppColors.primary,
-                        ),
-                        Center(
-                          child: Text(
-                            '$percent%',
-                            style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w800,
-                              color: AppColors.primary,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          '正在清理微信数据',
-                          style: TextStyle(
-                            fontSize: 17,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text('已处理 ${formatWechatBytes(cleanedBytes)}'),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
       ),
     );
   }

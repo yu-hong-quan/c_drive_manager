@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../platform/window_controller.dart';
 import '../theme/app_colors.dart';
+import '../theme/ui_assets.dart';
 
 class TopNavigation extends StatelessWidget {
   const TopNavigation({
@@ -40,7 +41,12 @@ class TopNavigation extends StatelessWidget {
             SizedBox(
               width: 36,
               height: 36,
-              child: Image.asset('assets/images/logo.png', fit: BoxFit.contain),
+              child: Image.asset(
+                UiAssets.logo,
+                fit: BoxFit.contain,
+                errorBuilder: (context, error, stackTrace) =>
+                    Image.asset('assets/images/logo.png', fit: BoxFit.contain),
+              ),
             ),
             const SizedBox(width: 12),
             Text(

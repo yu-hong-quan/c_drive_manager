@@ -1,0 +1,60 @@
+{
+  "version": 1,
+  "rules": [
+    {
+      "id": "system_temp",
+      "title": "系统临时文件",
+      "subtitle": "Windows 和当前用户产生的临时文件，锁定文件会自动跳过。",
+      "source": "%TEMP%、%WINDIR%\\Temp",
+      "risk": "safe",
+      "defaultSelected": true,
+      "recoverable": false,
+      "roots": [
+        { "env": "TEMP" },
+        { "env": "TMP" },
+        { "env": "WINDIR", "child": "Temp" }
+      ]
+    },
+    {
+      "id": "app_cache",
+      "title": "应用与浏览器缓存",
+      "subtitle": "可重建的 Chrome、Edge、Electron 等本地缓存文件。",
+      "source": "%LOCALAPPDATA%\\*\\Cache",
+      "risk": "safe",
+      "defaultSelected": true,
+      "recoverable": false,
+      "roots": [
+        { "env": "LOCALAPPDATA", "child": "Google\\Chrome\\User Data\\Default\\Cache" },
+        { "env": "LOCALAPPDATA", "child": "Google\\Chrome\\User Data\\Default\\Code Cache" },
+        { "env": "LOCALAPPDATA", "child": "Microsoft\\Edge\\User Data\\Default\\Cache" },
+        { "env": "LOCALAPPDATA", "child": "Microsoft\\Edge\\User Data\\Default\\Code Cache" }
+      ]
+    },
+    {
+      "id": "logs_dumps",
+      "title": "日志与崩溃转储",
+      "subtitle": "崩溃转储、错误报告缓存和旧日志；清理后进入隔离区保留。",
+      "source": "CrashDumps、Windows Error Reporting",
+      "risk": "safe",
+      "defaultSelected": true,
+      "recoverable": true,
+      "roots": [
+        { "env": "LOCALAPPDATA", "child": "CrashDumps" },
+        { "env": "PROGRAMDATA", "child": "Microsoft\\Windows\\WER\\ReportArchive" },
+        { "env": "PROGRAMDATA", "child": "Microsoft\\Windows\\WER\\ReportQueue" }
+      ]
+    },
+    {
+      "id": "recycle_bin",
+      "title": "回收站",
+      "subtitle": "回收站可能包含用户主动保留的文件，默认不勾选，清理后隔离。",
+      "source": "C:\\$Recycle.Bin",
+      "risk": "caution",
+      "defaultSelected": false,
+      "recoverable": true,
+      "roots": [
+        { "absolute": "C:\\$Recycle.Bin" }
+      ]
+    }
+  ]
+}

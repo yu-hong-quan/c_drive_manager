@@ -5,9 +5,9 @@ edition.workspace = true
 license.workspace = true
 
 [lib]
-# Flutter loads this crate as a Windows DLL through Dart FFI.
-crate-type = ["cdylib"]
+crate-type = ["cdylib", "rlib"]
 path = "src/lib.rs"
 
 [dependencies]
+c_drive_manager_core = { path = "../core" }
 c_drive_manager_protocol = { path = "../protocol" }

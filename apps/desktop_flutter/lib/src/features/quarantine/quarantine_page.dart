@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 
 import '../../theme/app_colors.dart';
+import '../../theme/ui_assets.dart';
 import '../../widgets/animated_app_dialog.dart';
 import '../../widgets/app_card.dart';
+import '../../widgets/task_progress_overlay.dart';
+import '../../widgets/task_result_dialog.dart';
 import '../settings/settings_service.dart';
 import 'quarantine_service.dart';
 
@@ -23,6 +26,9 @@ class _QuarantinePageState extends State<QuarantinePage> {
   String _rootPath = '';
   bool _loading = true;
   bool _busy = false;
+  double _busyProgress = 0;
+  String _busyTitle = '正在处理隔离项';
+  String _busySubtitle = '请稍候...';
   String? _message;
 
   @override
@@ -44,53 +50,64 @@ class _QuarantinePageState extends State<QuarantinePage> {
 
     return ConstrainedBox(
       constraints: const BoxConstraints(maxWidth: 1386),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Stack(
         children: [
-          Text('隔离区', style: Theme.of(context).textTheme.displaySmall),
-          const SizedBox(height: 12),
-          const Row(
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(Icons.verified_user_outlined, color: AppColors.primary),
-              SizedBox(width: 8),
-              Flexible(
-                child: Text(
-                  '可恢复项目保留在非 C 盘隔离区，到期前可恢复到原路径',
-                  style: TextStyle(color: AppColors.muted, fontSize: 18),
+              Text('隔离区', style: Theme.of(context).textTheme.displaySmall),
+              const SizedBox(height: 12),
+              const Row(
+                children: [
+                  Icon(Icons.verified_user_outlined, color: AppColors.primary),
+                  SizedBox(width: 8),
+                  Flexible(
+                    child: Text(
+                      '可恢复项目保留在非 C 盘隔离区，到期前可恢复到原路径',
+                      style: TextStyle(color: AppColors.muted, fontSize: 18),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 28),
+              _SummaryCard(
+                loading: _loading,
+                totalBytes: totalBytes,
+                itemCount: _items.length,
+                expiredCount: expiredCount,
+                rootPath: _rootPath,
+                busy: _busy,
+                onRefresh: _reload,
+                onOpenFolder: _openFolder,
+                onPurgeExpired: expiredCount > 0 ? _purgeExpired : null,
+                onRestoreSelected: selected.isNotEmpty ? _restoreSelected : null,
+                onPurgeSelected: selected.isNotEmpty ? _purgeSelected : null,
+              ),
+              const SizedBox(height: 22),
+              if (_message != null) ...[
+                Text(
+                  _message!,
+                  style: const TextStyle(color: AppColors.primary, fontSize: 15),
                 ),
+                const SizedBox(height: 12),
+              ],
+              _ItemListCard(
+                loading: _loading,
+                items: _items,
+                selectedIds: _selectedIds,
+                now: now,
+                onToggle: _toggleItem,
+                onToggleAll: _toggleAll,
               ),
             ],
           ),
-          const SizedBox(height: 28),
-          _SummaryCard(
-            loading: _loading,
-            totalBytes: totalBytes,
-            itemCount: _items.length,
-            expiredCount: expiredCount,
-            rootPath: _rootPath,
-            busy: _busy,
-            onRefresh: _reload,
-            onOpenFolder: _openFolder,
-            onPurgeExpired: expiredCount > 0 ? _purgeExpired : null,
-            onRestoreSelected: selected.isNotEmpty ? _restoreSelected : null,
-            onPurgeSelected: selected.isNotEmpty ? _purgeSelected : null,
-          ),
-          const SizedBox(height: 22),
-          if (_message != null) ...[
-            Text(
-              _message!,
-              style: const TextStyle(color: AppColors.primary, fontSize: 15),
+          if (_busy)
+            TaskProgressOverlay(
+              title: _busyTitle,
+              subtitle: _busySubtitle,
+              progress: _busyProgress,
+              icon: Icons.security_outlined,
             ),
-            const SizedBox(height: 12),
-          ],
-          _ItemListCard(
-            loading: _loading,
-            items: _items,
-            selectedIds: _selectedIds,
-            now: now,
-            onToggle: _toggleItem,
-            onToggleAll: _toggleAll,
-          ),
         ],
       ),
     );
@@ -165,16 +182,32 @@ class _QuarantinePageState extends State<QuarantinePage> {
     );
     if (confirmed != true || !mounted) return;
 
-    setState(() => _busy = true);
+    setState(() {
+      _busy = true;
+      _busyProgress = 0.08;
+      _busyTitle = '正在恢复文件';
+      _busySubtitle = '正在写回原路径，已有同名文件会跳过';
+    });
     final result = await _service.restoreItems(selected);
     if (!mounted) return;
     setState(() {
       _busy = false;
+      _busyProgress = 1;
       _message =
           '已恢复 ${result.successCount} 项（${formatQuarantineBytes(result.bytes)}）'
           '${result.failedCount > 0 ? '，失败 ${result.failedCount} 项' : ''}';
     });
     await _reload();
+    if (!mounted) return;
+    await _showActionResult(
+      successCount: result.successCount,
+      failedCount: result.failedCount,
+      bytes: result.bytes,
+      successTitle: '恢复成功',
+      partialTitle: '恢复完成（部分失败）',
+      failureTitle: '恢复失败',
+      actionVerb: '恢复',
+    );
   }
 
   Future<void> _purgeSelected() async {
@@ -206,15 +239,31 @@ class _QuarantinePageState extends State<QuarantinePage> {
     );
     if (confirmed != true || !mounted) return;
 
-    setState(() => _busy = true);
+    setState(() {
+      _busy = true;
+      _busyProgress = 0.08;
+      _busyTitle = '正在永久删除';
+      _busySubtitle = '正在清空所选隔离项';
+    });
     final result = await _service.purgeItems(selected);
     if (!mounted) return;
     setState(() {
       _busy = false;
+      _busyProgress = 1;
       _message =
           '已清空 ${result.successCount} 项（${formatQuarantineBytes(result.bytes)}）';
     });
     await _reload();
+    if (!mounted) return;
+    await _showActionResult(
+      successCount: result.successCount,
+      failedCount: result.failedCount,
+      bytes: result.bytes,
+      successTitle: '删除成功',
+      partialTitle: '删除完成（部分失败）',
+      failureTitle: '删除失败',
+      actionVerb: '删除',
+    );
   }
 
   Future<void> _purgeExpired() async {
@@ -241,15 +290,60 @@ class _QuarantinePageState extends State<QuarantinePage> {
     );
     if (confirmed != true || !mounted) return;
 
-    setState(() => _busy = true);
+    setState(() {
+      _busy = true;
+      _busyProgress = 0.08;
+      _busyTitle = '正在清理到期项';
+      _busySubtitle = '仅处理已到期且索引完整的隔离文件';
+    });
     final result = await _service.purgeExpired();
     if (!mounted) return;
     setState(() {
       _busy = false;
+      _busyProgress = 1;
       _message =
           '已清理到期 ${result.successCount} 项（${formatQuarantineBytes(result.bytes)}）';
     });
     await _reload();
+    if (!mounted) return;
+    await _showActionResult(
+      successCount: result.successCount,
+      failedCount: result.failedCount,
+      bytes: result.bytes,
+      successTitle: '到期清理成功',
+      partialTitle: '到期清理完成（部分失败）',
+      failureTitle: '到期清理失败',
+      actionVerb: '清理',
+    );
+  }
+
+  Future<void> _showActionResult({
+    required int successCount,
+    required int failedCount,
+    required int bytes,
+    required String successTitle,
+    required String partialTitle,
+    required String failureTitle,
+    required String actionVerb,
+  }) async {
+    final kind = successCount <= 0 && failedCount > 0
+        ? TaskResultKind.failure
+        : (failedCount > 0 ? TaskResultKind.partial : TaskResultKind.success);
+    final title = switch (kind) {
+      TaskResultKind.success => successTitle,
+      TaskResultKind.partial => partialTitle,
+      TaskResultKind.failure => failureTitle,
+    };
+    await showTaskResultDialog(
+      context: context,
+      kind: kind,
+      title: title,
+      message: '共处理 ${formatQuarantineBytes(bytes)}。',
+      details: [
+        '成功$actionVerb $successCount 项',
+        '失败 $failedCount 项',
+      ],
+    );
   }
 }
 
@@ -336,7 +430,7 @@ class _SummaryCard extends StatelessWidget {
                   ),
                   OutlinedButton.icon(
                     onPressed: busy ? null : onOpenFolder,
-                    icon: const Icon(Icons.folder_open_outlined),
+                    icon: const UiAssetIcon(asset: UiAssets.quarantineOpen, fallback: Icons.folder_open_outlined, size: 18),
                     label: const Text('打开目录'),
                   ),
                   OutlinedButton.icon(
@@ -393,7 +487,7 @@ class _ItemListCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Icon(Icons.security_outlined, color: AppColors.primary),
+              const UiAssetIcon(asset: UiAssets.quarantineActive, fallback: Icons.security_outlined, color: AppColors.primary, size: 24),
               const SizedBox(width: 10),
               Text('隔离记录', style: Theme.of(context).textTheme.headlineSmall),
               const Spacer(),

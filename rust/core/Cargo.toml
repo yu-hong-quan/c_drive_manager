@@ -6,3 +6,11 @@ license.workspace = true
 
 [dependencies]
 c_drive_manager_protocol = { path = "../protocol" }
+c_drive_manager_cleaner = { path = "../cleaner" }
+c_drive_manager_quarantine = { path = "../quarantine" }
+c_drive_manager_wechat = { path = "../wechat" }
+c_drive_manager_windows_api = { path = "../windows_api" }
+c_drive_manager_app_inventory = { path = "../app_inventory" }
+c_drive_manager_migrator = { path = "../migrator" }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"

@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
 
+import '../../native/elevation_helper.dart';
+import '../../native/native_bridge.dart';
 import '../system_info/system_info_service.dart';
 
 enum AppCompatibility { movable, caution, unsupported }
@@ -34,6 +36,20 @@ class MigratableApp {
   final List<String> reasons;
 
   bool get selectable => compatibility != AppCompatibility.unsupported;
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'name': name,
+        'version': version,
+        'publisher': publisher,
+        'bitness': bitness,
+        'installPath': installPath,
+        'executablePath': executablePath,
+        'sizeBytes': sizeBytes,
+        'running': running,
+        'compatibility': compatibility.name,
+        'reasons': reasons,
+      };
 }
 
 /// Fixed local volume that can be evaluated as a migration target.
@@ -52,6 +68,13 @@ class MigrationTargetVolume {
 
   bool get usable =>
       drive.toUpperCase() != 'C:' && fileSystem.toUpperCase() == 'NTFS';
+
+  Map<String, dynamic> toJson() => {
+        'drive': drive,
+        'fileSystem': fileSystem,
+        'totalBytes': totalBytes,
+        'freeBytes': freeBytes,
+      };
 }
 
 /// Stored transaction preview for a migration request.
@@ -120,9 +143,97 @@ class MigrationExecutionResult {
   bool get hasFailure => failed.isNotEmpty;
 }
 
-/// Scans C-drive non-system Win32 apps and creates local-first transaction plans.
+/// 扫描 C 盘非系统 Win32 应用并创建本地优先事务计划。
+/// 优先走 Rust FFI；引擎不可用时回退到 Dart PowerShell / robocopy。
 class AppMigrationService {
   Future<List<MigratableApp>> scanApps() async {
+    if (NativeBridge.isAvailable) {
+      try {
+        final payload = _asMap(
+          NativeBridge.instance.call('migration.scan_apps'),
+        );
+        final apps = <MigratableApp>[];
+        final seen = <String>{};
+        for (final item in _asList(payload['apps'])) {
+          final app = _appFromJson(_asMap(item));
+          if (app == null) continue;
+          final key =
+              '${app.name.toLowerCase()}\u0000${app.installPath.toLowerCase()}';
+          if (seen.add(key)) apps.add(app);
+        }
+        apps.sort((a, b) => b.sizeBytes.compareTo(a.sizeBytes));
+        return apps;
+      } on Object {
+        // FFI 失败时回退 Dart，保证迁移页仍可用。
+      }
+    }
+    return _scanAppsDart();
+  }
+
+  Future<List<MigrationTargetVolume>> scanTargetVolumes() async {
+    if (NativeBridge.isAvailable) {
+      try {
+        final payload = _asMap(
+          NativeBridge.instance.call('migration.scan_targets'),
+        );
+        return _asList(payload['volumes'])
+            .map((item) => _volumeFromJson(_asMap(item)))
+            .whereType<MigrationTargetVolume>()
+            .toList();
+      } on Object {
+        // 回退 Dart。
+      }
+    }
+    return _scanTargetVolumesDart();
+  }
+
+  Future<MigrationPlanResult> createPlan({
+    required List<MigratableApp> apps,
+    required MigrationTargetVolume target,
+  }) async {
+    if (NativeBridge.isAvailable) {
+      try {
+        final raw = _asMap(
+          NativeBridge.instance.call('migration.create_plan', {
+            'apps': [for (final app in apps) app.toJson()],
+            'target': target.toJson(),
+          }),
+        );
+        return _planResultFromJson(raw, appsFallback: apps);
+      } on Object {
+        // 回退 Dart。
+      }
+    }
+    return _createPlanDart(apps: apps, target: target);
+  }
+
+  Future<MigrationExecutionResult> executePlan(
+    MigrationPlan plan, {
+    String? targetRootPath,
+    Set<String> desktopShortcutAppIds = const {},
+    void Function(MigrationProgress progress)? onProgress,
+  }) async {
+    if (NativeBridge.isAvailable) {
+      try {
+        return await _executePlanNative(
+          plan,
+          targetRootPath: targetRootPath,
+          desktopShortcutAppIds: desktopShortcutAppIds,
+          onProgress: onProgress,
+        );
+      } on Object {
+        // 回退 Dart 执行路径。
+      }
+    }
+    return _executePlanDart(
+      plan,
+      targetRootPath: targetRootPath,
+      desktopShortcutAppIds: desktopShortcutAppIds,
+      onProgress: onProgress,
+    );
+  }
+
+  Future<List<MigratableApp>> _scanAppsDart() async {
     final payload = await _runPowerShell(_scanScript);
     final rawApps = _asList(payload['apps']);
     final apps = <MigratableApp>[];
@@ -141,7 +252,7 @@ class AppMigrationService {
     return apps;
   }
 
-  Future<List<MigrationTargetVolume>> scanTargetVolumes() async {
+  Future<List<MigrationTargetVolume>> _scanTargetVolumesDart() async {
     final payload = await _runPowerShell(_volumeScript);
     return _asList(payload['volumes'])
         .map((item) => _volumeFromJson(_asMap(item)))
@@ -149,7 +260,7 @@ class AppMigrationService {
         .toList();
   }
 
-  Future<MigrationPlanResult> createPlan({
+  Future<MigrationPlanResult> _createPlanDart({
     required List<MigratableApp> apps,
     required MigrationTargetVolume target,
   }) async {
@@ -195,21 +306,7 @@ class AppMigrationService {
         'totalBytes': totalBytes,
         'blockers': blockers,
         'warnings': warnings,
-        'apps': [
-          for (final app in apps)
-            {
-              'name': app.name,
-              'version': app.version,
-              'publisher': app.publisher,
-              'bitness': app.bitness,
-              'installPath': app.installPath,
-              'executablePath': app.executablePath,
-              'sizeBytes': app.sizeBytes,
-              'compatibility': app.compatibility.name,
-              'running': app.running,
-              'reasons': app.reasons,
-            },
-        ],
+        'apps': [for (final app in apps) app.toJson()],
         // The native mover must follow this ordered transaction recipe so failed
         // migrations can roll back without leaving the original path broken.
         'recipe': [
@@ -232,7 +329,86 @@ class AppMigrationService {
     );
   }
 
-  Future<MigrationExecutionResult> executePlan(
+  Future<MigrationExecutionResult> _executePlanNative(
+    MigrationPlan plan, {
+    String? targetRootPath,
+    Set<String> desktopShortcutAppIds = const {},
+    void Function(MigrationProgress progress)? onProgress,
+  }) async {
+    final migrated = <String>[];
+    final failed = <String>[];
+    final messages = <String>[];
+    final helperPath = _resolveHelperPath();
+
+    for (var i = 0; i < plan.apps.length; i++) {
+      final app = plan.apps[i];
+      final baseProgress = i / plan.apps.length;
+      final stepSize = 1 / plan.apps.length;
+      onProgress?.call(
+        MigrationProgress(
+          value: (baseProgress + 0.1 * stepSize).clamp(0.0, 1.0),
+          message: '正在迁移 ${app.name}',
+        ),
+      );
+
+      final data = _asMap(
+        NativeBridge.instance.call('migration.execute_app', {
+          'planId': plan.id,
+          'app': app.toJson(),
+          'targetDrive': plan.targetDrive,
+          'targetRootPath': targetRootPath,
+          'helperPath': helperPath,
+        }),
+      );
+      final success = data['success'] == true;
+      final message = _string(data['message'], fallback: app.name);
+      if (success) {
+        migrated.add(app.name);
+        messages.add(message);
+        if (desktopShortcutAppIds.contains(app.id)) {
+          try {
+            final targetPath = _string(data['targetPath']);
+            if (targetPath.isNotEmpty) {
+              final shortcutPath =
+                  await _createDesktopShortcut(app, targetPath);
+              messages.add('${app.name} 桌面快捷方式已创建：$shortcutPath');
+            }
+          } on Object catch (error) {
+            messages.add('${app.name} 已迁移，但桌面快捷方式创建失败：$error');
+          }
+        }
+      } else {
+        failed.add(app.name);
+        messages.add(message);
+      }
+      onProgress?.call(
+        MigrationProgress(
+          value: (baseProgress + stepSize).clamp(0.0, 1.0),
+          message: success ? '${app.name} 迁移完成' : '${app.name} 迁移失败',
+        ),
+      );
+    }
+
+    try {
+      NativeBridge.instance.call('migration.append_log', {
+        'transactionPath': plan.transactionPath,
+        'migrated': migrated,
+        'failed': failed,
+        'messages': messages,
+      });
+    } on Object {
+      await _appendExecutionLog(plan, migrated, failed, messages);
+    }
+
+    onProgress?.call(const MigrationProgress(value: 1, message: '迁移任务完成'));
+    return MigrationExecutionResult(
+      migrated: migrated,
+      failed: failed,
+      messages: messages,
+    );
+  }
+
+  Future<MigrationExecutionResult> _executePlanDart(
     MigrationPlan plan, {
     String? targetRootPath,
     Set<String> desktopShortcutAppIds = const {},
@@ -314,12 +490,12 @@ class AppMigrationService {
           await tempDir.rename(targetDir.path);
           targetPromoted = true;
           progress(0.86, '正在建立兼容链接 ${app.name}');
-          final linkCode = await _createJunction(
+          final linked = await _createJunction(
             app.installPath,
             targetDir.path,
           );
-          if (linkCode != 0 || !await Directory(app.installPath).exists()) {
-            throw AppMigrationException('目录联接创建失败，退出码：$linkCode');
+          if (!linked || !await Directory(app.installPath).exists()) {
+            throw AppMigrationException('目录联接创建失败：${app.name}');
           }
         } on Object {
           await _rollbackApp(
@@ -358,6 +534,54 @@ class AppMigrationService {
       failed: failed,
       messages: messages,
     );
+  }
+
+  MigrationPlanResult _planResultFromJson(
+    Map<String, dynamic> json, {
+    required List<MigratableApp> appsFallback,
+  }) {
+    final planJson = _asMap(json['plan']);
+    final apps = _asList(planJson['apps'])
+        .map((item) => _appFromJson(_asMap(item)))
+        .whereType<MigratableApp>()
+        .toList();
+    return MigrationPlanResult(
+      plan: MigrationPlan(
+        id: _string(planJson['id']),
+        targetDrive: _string(planJson['targetDrive']),
+        apps: apps.isEmpty ? appsFallback : apps,
+        totalBytes: _parseInt(planJson['totalBytes']),
+        createdAt: _parseDateTime(planJson['createdAt']),
+        transactionPath: _string(planJson['transactionPath']),
+      ),
+      blockers: _asList(json['blockers']).map((item) => '$item').toList(),
+      warnings: _asList(json['warnings']).map((item) => '$item').toList(),
+    );
+  }
+
+  DateTime _parseDateTime(dynamic value) {
+    final text = '$value'.trim();
+    final parsed = DateTime.tryParse(text);
+    if (parsed != null) return parsed;
+    final millis = int.tryParse(text);
+    if (millis != null) {
+      return DateTime.fromMillisecondsSinceEpoch(millis);
+    }
+    return DateTime.now();
+  }
+
+  String? _resolveHelperPath() {
+    final exeDir = File(Platform.resolvedExecutable).parent.path;
+    final candidates = <String>[
+      '$exeDir\\c_manager_helper.exe',
+      '${Directory.current.path}\\c_manager_helper.exe',
+      '${Directory.current.parent.parent.path}\\target\\release\\c_manager_helper.exe',
+      '${Directory.current.parent.parent.path}\\target\\debug\\c_manager_helper.exe',
+    ];
+    for (final path in candidates) {
+      if (File(path).existsSync()) return path;
+    }
+    return null;
   }
 
   MigratableApp? _appFromJson(Map<String, dynamic> json) {
@@ -445,15 +669,18 @@ class AppMigrationService {
     return result.exitCode;
   }
 
-  Future<int> _createJunction(String linkPath, String targetPath) async {
-    final result = await Process.run('cmd', [
-      '/c',
-      'mklink',
-      '/J',
-      linkPath,
-      targetPath,
-    ]);
-    return result.exitCode;
+  Future<bool> _createJunction(String linkPath, String targetPath) async {
+    try {
+      await ElevationHelper().createJunction(
+        linkPath: linkPath,
+        targetPath: targetPath,
+      );
+      return true;
+    } on ElevationHelperException {
+      return false;
+    } on Object {
+      return false;
+    }
   }
 
   Future<String> _createDesktopShortcut(

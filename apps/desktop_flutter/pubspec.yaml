@@ -10,6 +10,7 @@ dependencies:
   flutter:
     sdk: flutter
   cupertino_icons: ^1.0.8
+  ffi: ^2.1.4
 
 dev_dependencies:
   flutter_test:
@@ -21,3 +22,12 @@ flutter:
   assets:
     # Local copy of the brand mark keeps the desktop Flutter package self-contained.
     - assets/images/logo.png
+    # Flutter 仅包含目录直属文件，切图按子目录逐项声明。
+    - assets/ui/common/
+    - assets/ui/nav/
+    - assets/ui/cleanup/
+    - assets/ui/migration/
+    - assets/ui/wechat/
+    - assets/ui/system/
+    - assets/ui/quarantine/
+    - assets/ui/settings/

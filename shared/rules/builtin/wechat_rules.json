@@ -1,0 +1,170 @@
+{
+  "version": 1,
+  "layouts": {
+    "xwechat": [
+      {
+        "id": "running_cache",
+        "title": "运行缓存",
+        "subtitle": "新版微信可重建缓存，默认勾选。",
+        "risk": "safe",
+        "defaultSelected": true,
+        "recoverable": false,
+        "retentionDays": 3,
+        "allowClean": true,
+        "relativeRoots": ["cache", "temp", "radium\\cache"]
+      },
+      {
+        "id": "logs_updates",
+        "title": "日志与更新残留",
+        "subtitle": "日志与更新残留，可隔离后清理。",
+        "risk": "safe",
+        "defaultSelected": true,
+        "recoverable": true,
+        "retentionDays": 3,
+        "allowClean": true,
+        "relativeRoots": ["log", "logs", "update"]
+      },
+      {
+        "id": "chat_images",
+        "title": "聊天图片",
+        "subtitle": "高风险用户资料，默认不选。",
+        "risk": "high",
+        "defaultSelected": false,
+        "recoverable": true,
+        "retentionDays": 7,
+        "allowClean": true,
+        "relativeRoots": ["msg\\attach", "db_storage\\image"]
+      },
+      {
+        "id": "chat_video",
+        "title": "聊天视频",
+        "subtitle": "高风险用户资料，默认不选。",
+        "risk": "high",
+        "defaultSelected": false,
+        "recoverable": true,
+        "retentionDays": 7,
+        "allowClean": true,
+        "relativeRoots": ["db_storage\\video"]
+      },
+      {
+        "id": "received_files",
+        "title": "接收文件",
+        "subtitle": "接收文件默认不选，清理后隔离。",
+        "risk": "high",
+        "defaultSelected": false,
+        "recoverable": true,
+        "retentionDays": 7,
+        "allowClean": true,
+        "relativeRoots": ["msg\\file", "db_storage\\file"]
+      },
+      {
+        "id": "chat_database",
+        "title": "聊天数据库",
+        "subtitle": "极高风险：仅统计占用，不提供直接删除。",
+        "risk": "critical",
+        "defaultSelected": false,
+        "recoverable": false,
+        "retentionDays": 7,
+        "allowClean": false,
+        "relativeRoots": ["db_storage", "msg\\db"]
+      }
+    ],
+    "classic": [
+      {
+        "id": "running_cache",
+        "title": "运行缓存",
+        "subtitle": "缩略图、临时缓存和可重建资源，清理后可自动再生。",
+        "risk": "safe",
+        "defaultSelected": true,
+        "recoverable": false,
+        "retentionDays": 3,
+        "allowClean": true,
+        "relativeRoots": [
+          "FileStorage\\Cache",
+          "FileStorage\\Temp",
+          "FileStorage\\Image\\Thumb"
+        ]
+      },
+      {
+        "id": "logs_updates",
+        "title": "日志与更新残留",
+        "subtitle": "本地日志和更新残留，通常仅用于排查问题。",
+        "risk": "safe",
+        "defaultSelected": true,
+        "recoverable": true,
+        "retentionDays": 3,
+        "allowClean": true,
+        "relativeRoots": ["log", "Log", "Update"]
+      },
+      {
+        "id": "chat_images",
+        "title": "聊天图片",
+        "subtitle": "聊天图片属于用户资料，默认不选，清理后进入隔离区。",
+        "risk": "high",
+        "defaultSelected": false,
+        "recoverable": true,
+        "retentionDays": 7,
+        "allowClean": true,
+        "relativeRoots": ["FileStorage\\Image", "FileStorage\\MsgImg"]
+      },
+      {
+        "id": "chat_video",
+        "title": "聊天视频",
+        "subtitle": "聊天视频体积大，默认不选，清理后隔离保留。",
+        "risk": "high",
+        "defaultSelected": false,
+        "recoverable": true,
+        "retentionDays": 7,
+        "allowClean": true,
+        "relativeRoots": ["FileStorage\\Video"]
+      },
+      {
+        "id": "voice_audio",
+        "title": "语音与音频",
+        "subtitle": "语音消息缓存，默认不选。",
+        "risk": "high",
+        "defaultSelected": false,
+        "recoverable": true,
+        "retentionDays": 7,
+        "allowClean": true,
+        "relativeRoots": ["FileStorage\\Voice", "FileStorage\\Audio"]
+      },
+      {
+        "id": "received_files",
+        "title": "接收文件",
+        "subtitle": "聊天接收的文件，默认不选，清理后隔离 7 天。",
+        "risk": "high",
+        "defaultSelected": false,
+        "recoverable": true,
+        "retentionDays": 7,
+        "allowClean": true,
+        "relativeRoots": ["FileStorage\\File"]
+      },
+      {
+        "id": "stickers_favorites",
+        "title": "表情与收藏缓存",
+        "subtitle": "表情与收藏相关缓存，默认不选。",
+        "risk": "caution",
+        "defaultSelected": false,
+        "recoverable": true,
+        "retentionDays": 7,
+        "allowClean": true,
+        "relativeRoots": [
+          "FileStorage\\CustomEmotion",
+          "FileStorage\\Favorite"
+        ]
+      },
+      {
+        "id": "chat_database",
+        "title": "聊天数据库",
+        "subtitle": "极高风险：仅统计占用，V1 不提供直接删除。",
+        "risk": "critical",
+        "defaultSelected": false,
+        "recoverable": false,
+        "retentionDays": 7,
+        "allowClean": false,
+        "relativeRoots": ["Msg"]
+      }
+    ]
+  }
+}

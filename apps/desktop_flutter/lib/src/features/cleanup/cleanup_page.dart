@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 
 import '../../theme/app_colors.dart';
+import '../../theme/ui_assets.dart';
 import '../../widgets/animated_app_dialog.dart';
 import '../../widgets/app_card.dart';
+import '../../widgets/task_progress_overlay.dart';
+import '../../widgets/task_result_dialog.dart';
+import '../settings/settings_service.dart';
 import 'cleanup_service.dart';
 
 class CleanupPage extends StatefulWidget {
@@ -14,6 +18,7 @@ class CleanupPage extends StatefulWidget {
 
 class _CleanupPageState extends State<CleanupPage> {
   final CleanupService _service = CleanupService();
+  final SettingsService _settingsService = SettingsService();
   final Set<String> _selectedKeys = <String>{};
   final Set<String> _expandedIds = <String>{};
   List<CleanupCategoryResult> _results = const [];
@@ -25,6 +30,7 @@ class _CleanupPageState extends State<CleanupPage> {
   int _cleanedBytes = 0;
   String? _activeRuleId;
   CleanupExecutionResult? _lastClean;
+  AppSettings _settings = AppSettings.defaults();
 
   Iterable<CleanupFileItem> get _selectedFiles => _results.expand(
     (category) => category.files.where(
@@ -101,9 +107,11 @@ class _CleanupPageState extends State<CleanupPage> {
             ],
           ),
           if (_cleaning)
-            CleaningOverlay(
+            TaskProgressOverlay(
+              title: '正在清理',
+              subtitle: '已释放 ${formatBytes(_cleanedBytes)}，锁定文件会自动跳过',
               progress: _cleanProgress,
-              cleanedBytes: _cleanedBytes,
+              icon: Icons.cleaning_services_outlined,
             ),
         ],
       ),
@@ -120,7 +128,9 @@ class _CleanupPageState extends State<CleanupPage> {
       _scanProgress = 0;
     });
 
+    _settings = await _settingsService.load();
     final results = await _service.scan(
+      settings: _settings,
       shouldCancel: () => _cancelRequested,
       onRuleStarted: (ruleId) {
         if (mounted) setState(() => _activeRuleId = ruleId);
@@ -211,7 +221,7 @@ class _CleanupPageState extends State<CleanupPage> {
         title: Text(hasCaution ? '确认清理谨慎项目' : '确认开始清理'),
         content: Text(
           '将清理 ${formatBytes(_selectedBytes)}，共 $_selectedCount 个文件。'
-          '${hasCaution ? '\n\n已选择回收站等谨慎项目，清理后当前版本暂不提供恢复。' : '\n\n锁定或权限不足的文件会自动跳过。'}',
+          '${hasCaution ? '\n\n已选择回收站等谨慎项目，可恢复项会先移入隔离区。' : '\n\n可恢复项进入隔离区；临时文件与缓存将直接删除。'}',
         ),
         actions: [
           TextButton(
@@ -235,19 +245,36 @@ class _CleanupPageState extends State<CleanupPage> {
       _cleanedBytes = 0;
     });
 
-    final result = await _service.cleanFiles(
-      selected,
+    _settings = await _settingsService.load();
+    final result = await _service.cleanSelected(
+      categories: _results,
+      selectedKeys: _selectedKeys,
+      settings: _settings,
       shouldCancel: () => _cancelRequested,
-      onProgress: (progress, deletedBytes) {
+      onProgress: (progress, processedBytes) {
         if (!mounted) return;
         setState(() {
           _cleanProgress = progress.clamp(0.0, 1.0).toDouble();
-          _cleanedBytes = deletedBytes;
+          _cleanedBytes = processedBytes;
         });
       },
     );
     _cancelRequested = false;
-    final refreshed = await _service.scan();
+
+    if (result.isSpaceInsufficient) {
+      if (!mounted) return;
+      setState(() => _cleaning = false);
+      await showTaskResultDialog(
+        context: context,
+        kind: TaskResultKind.failure,
+        title: '清理失败',
+        message: '隔离盘空间不足，已停止清理且未永久删除。',
+        details: const ['错误码：QUARANTINE_SPACE_INSUFFICIENT'],
+      );
+      return;
+    }
+
+    final refreshed = await _service.scan(settings: _settings);
 
     if (!mounted) return;
     setState(() {
@@ -267,6 +294,33 @@ class _CleanupPageState extends State<CleanupPage> {
       _cleaning = false;
       _cleanProgress = 1;
     });
+    await _showCleanResult(result);
+  }
+
+  Future<void> _showCleanResult(CleanupExecutionResult result) async {
+    final processed = result.deletedFiles + result.quarantinedFiles;
+    final kind = processed <= 0 && result.failedFiles > 0
+        ? TaskResultKind.failure
+        : (result.failedFiles > 0 || result.skippedFiles > 0
+            ? TaskResultKind.partial
+            : TaskResultKind.success);
+    final title = switch (kind) {
+      TaskResultKind.success => '清理成功',
+      TaskResultKind.partial => '清理完成（部分未处理）',
+      TaskResultKind.failure => '清理失败',
+    };
+    await showTaskResultDialog(
+      context: context,
+      kind: kind,
+      title: title,
+      message: '共释放 ${formatBytes(result.releasedBytes)}。',
+      details: [
+        '直接删除 ${result.deletedFiles} 个文件',
+        '移入隔离 ${result.quarantinedFiles} 个文件',
+        '失败 ${result.failedFiles} 个文件',
+        '跳过 ${result.skippedFiles} 个文件',
+      ],
+    );
   }
 }
 
@@ -419,109 +473,6 @@ class ScanProgressStrip extends StatelessWidget {
               child: const ColoredBox(color: AppColors.primary),
             ),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-class CleaningOverlay extends StatelessWidget {
-  const CleaningOverlay({
-    super.key,
-    required this.progress,
-    required this.cleanedBytes,
-  });
-
-  final double progress;
-  final int cleanedBytes;
-
-  @override
-  Widget build(BuildContext context) {
-    final percent = (progress * 100).clamp(0, 100).round();
-    return Positioned(
-      top: 18,
-      right: 18,
-      child: IgnorePointer(
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            color: Colors.white.withAlpha(238),
-            border: Border.all(color: AppColors.border),
-            borderRadius: BorderRadius.circular(8),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x1F000000),
-                blurRadius: 18,
-                offset: Offset(0, 8),
-              ),
-            ],
-          ),
-          child: SizedBox(
-            width: 320,
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Row(
-                children: [
-                  SizedBox(
-                    width: 56,
-                    height: 56,
-                    child: Stack(
-                      fit: StackFit.expand,
-                      children: [
-                        CircularProgressIndicator(
-                          value: progress.clamp(0.02, 1.0).toDouble(),
-                          strokeWidth: 5,
-                          backgroundColor: AppColors.border,
-                          color: AppColors.primary,
-                        ),
-                        Center(
-                          child: Text(
-                            '$percent%',
-                            style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w800,
-                              color: AppColors.primary,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          '正在清理垃圾',
-                          style: TextStyle(
-                            fontSize: 17,
-                            fontWeight: FontWeight.w800,
-                            color: AppColors.text,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          '已释放 ${formatBytes(cleanedBytes)}',
-                          style: const TextStyle(color: AppColors.muted),
-                        ),
-                        const SizedBox(height: 12),
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: LinearProgressIndicator(
-                            value: progress.clamp(0.02, 1.0).toDouble(),
-                            minHeight: 8,
-                            backgroundColor: AppColors.border,
-                            color: AppColors.primary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
         ),
       ),
     );
@@ -707,8 +658,9 @@ class CleanupCategoryTile extends StatelessWidget {
                   ),
                   SizedBox(
                     width: 46,
-                    child: Icon(
-                      _iconFor(item.rule.id),
+                    child: UiAssetIcon(
+                      asset: UiAssets.cleanupCategory(item.rule.id),
+                      fallback: _iconFor(item.rule.id),
                       color: _riskColor(item.rule.risk),
                       size: 32,
                     ),
@@ -1013,9 +965,9 @@ class CleanupSidePanel extends StatelessWidget {
           if (lastClean != null) ...[
             const SizedBox(height: 14),
             Text(
-              '上次释放 ${formatBytes(lastClean!.deletedBytes)}，'
-              '成功 ${lastClean!.deletedFiles}，失败 ${lastClean!.failedFiles}，'
-              '跳过 ${lastClean!.skippedFiles}',
+              '上次释放 ${formatBytes(lastClean!.releasedBytes)}，'
+              '删除 ${lastClean!.deletedFiles}，隔离 ${lastClean!.quarantinedFiles}，'
+              '失败 ${lastClean!.failedFiles}，跳过 ${lastClean!.skippedFiles}',
               style: const TextStyle(color: AppColors.muted, height: 1.5),
             ),
           ],
@@ -1113,7 +1065,7 @@ class RecentTaskStrip extends StatelessWidget {
                 child: Text(
                   lastClean == null
                       ? '暂无清理记录'
-                      : '本次清理完成，释放 ${formatBytes(lastClean!.deletedBytes)}',
+                      : '本次清理完成，释放 ${formatBytes(lastClean!.releasedBytes)}',
                   style: const TextStyle(color: AppColors.text),
                 ),
               ),
@@ -1146,11 +1098,15 @@ class RecentTaskStrip extends StatelessWidget {
                 children: [
                   _TaskMetric(
                     label: '释放空间',
-                    value: formatBytes(result.deletedBytes),
+                    value: formatBytes(result.releasedBytes),
                   ),
                   _TaskMetric(
-                    label: '成功清理',
+                    label: '直接删除',
                     value: '${result.deletedFiles} 个文件',
+                  ),
+                  _TaskMetric(
+                    label: '移入隔离',
+                    value: '${result.quarantinedFiles} 个文件',
                   ),
                   _TaskMetric(label: '失败', value: '${result.failedFiles} 个文件'),
                   _TaskMetric(label: '跳过', value: '${result.skippedFiles} 个文件'),
@@ -1216,7 +1172,7 @@ Color _riskColor(CleanupRisk risk) {
 // The same file can be matched by more than one rule, so UI selection must be
 // scoped to the category while the final delete plan remains path-deduplicated.
 String _selectionKey(String categoryId, CleanupFileItem file) {
-  return '$categoryId\u0000${file.path.toLowerCase()}';
+  return cleanupSelectionKey(categoryId, file);
 }
 
 List<CleanupFileItem> _dedupeFilesByPath(Iterable<CleanupFileItem> files) {

@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
 
+import '../../native/native_bridge.dart';
+
 /// Snapshot of non-sensitive device data shown on the system information page.
 class SystemInfoSnapshot {
   const SystemInfoSnapshot({
@@ -78,12 +80,13 @@ class DisplayInfo {
 /// Reads Windows system information using ordinary user permissions only.
 class SystemInfoService {
   Future<SystemInfoSnapshot> load() async {
-    final data = await _loadPowerShellSnapshot();
+    final data = await _loadSnapshot();
     final os = _asMap(data['os']);
     final cpu = _asMap(data['cpu']);
     final memory = _memoryFrom(os);
     final disks = _asList(data['disks']).map(_diskFrom).toList();
     final displays = _asList(data['displays']).map(_displayFrom).toList();
+    final hostname = data['hostname']?.toString();
 
     return SystemInfoSnapshot(
       system: SystemInfoGroup(
@@ -92,7 +95,9 @@ class SystemInfoService {
           'Windows 版本': _string(os['Caption'], Platform.operatingSystemVersion),
           '版本号': _string(os['Version'], '未知'),
           '架构': _string(os['OSArchitecture'], '未知'),
-          '设备名称': Platform.localHostname,
+          '设备名称': (hostname == null || hostname.isEmpty)
+              ? Platform.localHostname
+              : hostname,
           '启动时间': _formatCimDate(_string(os['LastBootUpTime'], '未知')),
         },
       ),
@@ -112,6 +117,19 @@ class SystemInfoService {
       displays: displays,
       generatedAt: DateTime.now(),
     );
+  }
+
+  Future<Map<String, dynamic>> _loadSnapshot() async {
+    try {
+      // 优先走 Rust FFI；失败时回退 PowerShell，保证页面可用。
+      if (NativeBridge.isAvailable) {
+        final raw = NativeBridge.instance.call('system_info.get');
+        return Map<String, dynamic>.from(raw as Map);
+      }
+    } on Object {
+      // fall through
+    }
+    return _loadPowerShellSnapshot();
   }
 
   Future<Map<String, dynamic>> _loadPowerShellSnapshot() async {

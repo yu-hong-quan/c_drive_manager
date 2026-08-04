@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../theme/app_colors.dart';
+import '../../theme/ui_assets.dart';
 import '../../theme/theme_controller.dart';
 import '../../widgets/app_card.dart';
 import 'settings_service.dart';
@@ -77,6 +78,7 @@ class _SettingsPageState extends State<SettingsPage> {
   Widget _generalSection() {
     return _SettingsSection(
       icon: Icons.tune_outlined,
+      asset: UiAssets.settingsGeneral,
       title: '常规',
       children: [
         _SwitchRow(
@@ -101,6 +103,7 @@ class _SettingsPageState extends State<SettingsPage> {
   Widget _quarantineSection() {
     return _SettingsSection(
       icon: Icons.security_outlined,
+      asset: UiAssets.settingsQuarantine,
       title: '隔离与恢复',
       children: [
         _StepperRow(
@@ -125,6 +128,7 @@ class _SettingsPageState extends State<SettingsPage> {
   Widget _performanceSection() {
     return _SettingsSection(
       icon: Icons.speed_outlined,
+      asset: UiAssets.settingsScan,
       title: '扫描与性能',
       children: [
         _DropdownRow(
@@ -153,6 +157,7 @@ class _SettingsPageState extends State<SettingsPage> {
   Widget _privacySection() {
     return _SettingsSection(
       icon: Icons.privacy_tip_outlined,
+      asset: UiAssets.privacyShield,
       title: '隐私与日志',
       children: [
         _SwitchRow(
@@ -278,9 +283,11 @@ class _SettingsSection extends StatelessWidget {
     required this.icon,
     required this.title,
     required this.children,
+    this.asset,
   });
 
   final IconData icon;
+  final String? asset;
   final String title;
   final List<Widget> children;
 
@@ -293,7 +300,12 @@ class _SettingsSection extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(icon, color: AppColors.primary, size: 28),
+              UiAssetIcon(
+                asset: asset,
+                fallback: icon,
+                color: AppColors.primary,
+                size: 28,
+              ),
               const SizedBox(width: 10),
               Text(title, style: Theme.of(context).textTheme.headlineSmall),
             ],

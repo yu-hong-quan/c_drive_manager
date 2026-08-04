@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/animated_app_dialog.dart';
 import '../../widgets/app_card.dart';
+import '../../widgets/task_progress_overlay.dart';
+import '../../widgets/task_result_dialog.dart';
 import '../system_info/system_info_service.dart';
 import 'app_migration_service.dart';
 
@@ -39,68 +41,79 @@ class _AppMigrationPageState extends State<AppMigrationPage> {
   Widget build(BuildContext context) {
     return ConstrainedBox(
       constraints: const BoxConstraints(maxWidth: 1386),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Stack(
         children: [
-          _Header(scanning: _scanning, hasScanned: _hasScanned, onScan: _scan),
-          const SizedBox(height: 24),
-          _SummaryCard(
-            apps: _apps,
-            selectedBytes: _selectedBytes,
-            selectedCount: _selectedIds.length,
-            targets: _targets,
-            selectedTarget: _target,
-            scanning: _scanning,
-            onTargetChanged: (target) => setState(() => _target = target),
-            onCreatePlan: _createPlan,
-          ),
-          const SizedBox(height: 22),
-          if (_error != null) ...[
-            _MessageCard(
-              icon: Icons.error_outline,
-              color: const Color(0xFFD93025),
-              text: _error!,
-            ),
-            const SizedBox(height: 18),
-          ],
-          LayoutBuilder(
-            builder: (context, constraints) {
-              final narrow = constraints.maxWidth < 1040;
-              final list = _ApplicationList(
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _Header(scanning: _scanning, hasScanned: _hasScanned, onScan: _scan),
+              const SizedBox(height: 24),
+              _SummaryCard(
                 apps: _apps,
-                selectedIds: _selectedIds,
-                expandedIds: _expandedIds,
+                selectedBytes: _selectedBytes,
+                selectedCount: _selectedIds.length,
+                targets: _targets,
+                selectedTarget: _target,
                 scanning: _scanning,
-                hasScanned: _hasScanned,
-                onToggleApp: _toggleApp,
-                onToggleAll: _toggleAllSelectableApps,
-                onToggleExpand: _toggleExpand,
-              );
-              final safety = _MigrationSidePanel(
-                target: _target,
-                selectedApps: _selectedApps,
-                lastPlan: _lastPlan,
-                lastExecution: _lastExecution,
-                migrating: _migrating,
-                migrationProgress: _migrationProgress,
-                migrationMessage: _migrationMessage,
-                onExecutePlan: _executeMigration,
-              );
-              if (narrow) {
-                return Column(
-                  children: [list, const SizedBox(height: 18), safety],
-                );
-              }
-              return Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(flex: 3, child: list),
-                  const SizedBox(width: 20),
-                  SizedBox(width: 430, child: safety),
-                ],
-              );
-            },
+                onTargetChanged: (target) => setState(() => _target = target),
+                onCreatePlan: _createPlan,
+              ),
+              const SizedBox(height: 22),
+              if (_error != null) ...[
+                _MessageCard(
+                  icon: Icons.error_outline,
+                  color: const Color(0xFFD93025),
+                  text: _error!,
+                ),
+                const SizedBox(height: 18),
+              ],
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final narrow = constraints.maxWidth < 1040;
+                  final list = _ApplicationList(
+                    apps: _apps,
+                    selectedIds: _selectedIds,
+                    expandedIds: _expandedIds,
+                    scanning: _scanning,
+                    hasScanned: _hasScanned,
+                    onToggleApp: _toggleApp,
+                    onToggleAll: _toggleAllSelectableApps,
+                    onToggleExpand: _toggleExpand,
+                  );
+                  final safety = _MigrationSidePanel(
+                    target: _target,
+                    selectedApps: _selectedApps,
+                    lastPlan: _lastPlan,
+                    lastExecution: _lastExecution,
+                    migrating: _migrating,
+                    migrationProgress: _migrationProgress,
+                    migrationMessage: _migrationMessage,
+                    onExecutePlan: _executeMigration,
+                  );
+                  if (narrow) {
+                    return Column(
+                      children: [list, const SizedBox(height: 18), safety],
+                    );
+                  }
+                  return Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(flex: 3, child: list),
+                      const SizedBox(width: 20),
+                      SizedBox(width: 430, child: safety),
+                    ],
+                  );
+                },
+              ),
+            ],
           ),
+          if (_migrating)
+            TaskProgressOverlay(
+              title: '正在迁移应用',
+              subtitle: _migrationMessage ?? '正在复制、校验并建立兼容链接...',
+              progress: _migrationProgress,
+              icon: Icons.drive_file_move_outline,
+            ),
         ],
       ),
     );
@@ -251,6 +264,33 @@ class _AppMigrationPageState extends State<AppMigrationPage> {
       _migrationProgress = 1;
       _migrationMessage = result.hasFailure ? '迁移完成，部分失败' : '迁移完成';
     });
+    await _showMigrationResult(result);
+  }
+
+  Future<void> _showMigrationResult(MigrationExecutionResult result) async {
+    final kind = result.migrated.isEmpty && result.failed.isNotEmpty
+        ? TaskResultKind.failure
+        : (result.hasFailure ? TaskResultKind.partial : TaskResultKind.success);
+    final title = switch (kind) {
+      TaskResultKind.success => '迁移成功',
+      TaskResultKind.partial => '迁移完成（部分失败）',
+      TaskResultKind.failure => '迁移失败',
+    };
+    await showTaskResultDialog(
+      context: context,
+      kind: kind,
+      title: title,
+      message:
+          '成功 ${result.migrated.length} 个，失败 ${result.failed.length} 个。',
+      details: [
+        ...result.migrated.take(2).map((name) => '已迁移：$name'),
+        ...result.failed.take(2).map((name) => '失败：$name'),
+        ...result.messages
+            .where((line) => !result.migrated.any(line.contains) &&
+                !result.failed.any(line.contains))
+            .take(2),
+      ],
+    );
   }
 }
 
