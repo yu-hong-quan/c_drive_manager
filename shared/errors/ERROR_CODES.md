@@ -9,3 +9,5 @@ Error codes are stable user-facing contracts. Native system messages should be l
 | `ELEVATION_REQUIRED` | Operation requires the Rust Helper with UAC approval. |
 | `QUARANTINE_SPACE_INSUFFICIENT` | The selected quarantine volume cannot safely hold recoverable files. |
 | `MIGRATION_TARGET_INVALID` | Target volume is not a fixed local NTFS volume or is unhealthy. |
+| `WX_RUNNING` | WeChat/Weixin is still running; write cleanup is blocked until the process exits. |
+| `WX_LAYOUT_UNKNOWN` | The selected WeChat data directory layout cannot be recognized safely. |

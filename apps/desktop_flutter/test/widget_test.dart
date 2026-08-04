@@ -19,9 +19,18 @@ void main() {
     expect(find.text('清理计划'), findsOneWidget);
 
     await tester.tap(find.text('微信专清'));
-    await tester.pumpAndSettle();
+    // 账号发现会跑异步 Process/文件系统，这里推进几帧即可看到页面骨架。
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
 
     expect(find.text('微信专清'), findsWidgets);
-    expect(find.text('预计释放'), findsOneWidget);
+    expect(find.text('预计可释放'), findsOneWidget);
+
+    await tester.tap(find.text('隔离区'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    expect(find.text('隔离占用'), findsOneWidget);
+    expect(find.text('隔离记录'), findsOneWidget);
   });
 }

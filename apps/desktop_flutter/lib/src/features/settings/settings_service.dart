@@ -7,6 +7,7 @@ class AppSettings {
     required this.launchOnStartup,
     required this.minimizeToTray,
     required this.quarantineDays,
+    required this.quarantinePath,
     required this.scanMode,
     required this.skipLargeFiles,
     required this.gameMode,
@@ -22,6 +23,8 @@ class AppSettings {
       launchOnStartup: false,
       minimizeToTray: true,
       quarantineDays: 7,
+      // 空字符串表示自动选择非 C 盘隔离根目录。
+      quarantinePath: '',
       scanMode: 'balanced',
       skipLargeFiles: true,
       gameMode: false,
@@ -41,6 +44,8 @@ class AppSettings {
       minimizeToTray:
           json['minimizeToTray'] as bool? ?? defaults.minimizeToTray,
       quarantineDays: _readInt(json['quarantineDays'], defaults.quarantineDays),
+      quarantinePath:
+          json['quarantinePath'] as String? ?? defaults.quarantinePath,
       scanMode: json['scanMode'] as String? ?? defaults.scanMode,
       skipLargeFiles:
           json['skipLargeFiles'] as bool? ?? defaults.skipLargeFiles,
@@ -58,6 +63,9 @@ class AppSettings {
   final bool launchOnStartup;
   final bool minimizeToTray;
   final int quarantineDays;
+
+  /// 用户指定的隔离根目录；为空时由隔离服务自动探测非 C 盘。
+  final String quarantinePath;
   final String scanMode;
   final bool skipLargeFiles;
   final bool gameMode;
@@ -71,6 +79,7 @@ class AppSettings {
     bool? launchOnStartup,
     bool? minimizeToTray,
     int? quarantineDays,
+    String? quarantinePath,
     String? scanMode,
     bool? skipLargeFiles,
     bool? gameMode,
@@ -84,6 +93,7 @@ class AppSettings {
       launchOnStartup: launchOnStartup ?? this.launchOnStartup,
       minimizeToTray: minimizeToTray ?? this.minimizeToTray,
       quarantineDays: quarantineDays ?? this.quarantineDays,
+      quarantinePath: quarantinePath ?? this.quarantinePath,
       scanMode: scanMode ?? this.scanMode,
       skipLargeFiles: skipLargeFiles ?? this.skipLargeFiles,
       gameMode: gameMode ?? this.gameMode,
@@ -100,6 +110,7 @@ class AppSettings {
       'launchOnStartup': launchOnStartup,
       'minimizeToTray': minimizeToTray,
       'quarantineDays': quarantineDays,
+      'quarantinePath': quarantinePath,
       'scanMode': scanMode,
       'skipLargeFiles': skipLargeFiles,
       'gameMode': gameMode,

@@ -56,6 +56,7 @@ class _SettingsPageState extends State<SettingsPage> {
             _SettingsGrid(
               sections: [
                 _generalSection(),
+                _quarantineSection(),
                 _performanceSection(),
                 _privacySection(),
                 _updateSection(),
@@ -92,6 +93,16 @@ class _SettingsPageState extends State<SettingsPage> {
           onChanged: (value) =>
               _update(_settings.copyWith(minimizeToTray: value)),
         ),
+        _ThemeModeRow(value: _settings.themeMode, onChanged: _updateThemeMode),
+      ],
+    );
+  }
+
+  Widget _quarantineSection() {
+    return _SettingsSection(
+      icon: Icons.security_outlined,
+      title: '隔离与恢复',
+      children: [
         _StepperRow(
           title: '隔离区保留天数',
           value: _settings.quarantineDays,
@@ -100,7 +111,13 @@ class _SettingsPageState extends State<SettingsPage> {
           onChanged: (value) =>
               _update(_settings.copyWith(quarantineDays: value)),
         ),
-        _ThemeModeRow(value: _settings.themeMode, onChanged: _updateThemeMode),
+        _PathRow(
+          title: '隔离根目录',
+          subtitle: '留空则自动优先选择非 C 盘；空间不足时不会自动永久删除。',
+          value: _settings.quarantinePath,
+          onChanged: (value) =>
+              _update(_settings.copyWith(quarantinePath: value.trim())),
+        ),
       ],
     );
   }
@@ -459,6 +476,48 @@ class _DropdownRow extends StatelessWidget {
             onChanged: (value) {
               if (value != null) onChanged(value);
             },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PathRow extends StatelessWidget {
+  const _PathRow({
+    required this.title,
+    required this.subtitle,
+    required this.value,
+    required this.onChanged,
+  });
+
+  final String title;
+  final String subtitle;
+  final String value;
+  final ValueChanged<String> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 10, bottom: 6),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 4),
+          Text(subtitle, style: const TextStyle(color: AppColors.muted)),
+          const SizedBox(height: 10),
+          TextFormField(
+            initialValue: value,
+            onChanged: onChanged,
+            decoration: const InputDecoration(
+              hintText: r'例如 D:\CDriveManagerQuarantine',
+              border: OutlineInputBorder(),
+              isDense: true,
+            ),
           ),
         ],
       ),

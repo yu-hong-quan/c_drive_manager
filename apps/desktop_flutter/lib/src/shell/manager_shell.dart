@@ -5,8 +5,10 @@ import '../features/app_migration/app_migration_page.dart';
 import '../features/cleanup/cleanup_page.dart';
 import '../features/dashboard/feature_dashboard.dart';
 import '../features/feature_pages.dart';
+import '../features/quarantine/quarantine_page.dart';
 import '../features/settings/settings_page.dart';
 import '../features/system_info/system_info_page.dart';
+import '../features/wechat/wechat_page.dart';
 import '../theme/app_colors.dart';
 import 'top_navigation.dart';
 
@@ -61,7 +63,9 @@ class _ManagerShellState extends State<ManagerShell> {
                     child: switch (_selectedIndex) {
                       0 => const CleanupPage(),
                       1 => const AppMigrationPage(),
+                      2 => const WechatPage(),
                       3 => const SystemInfoPage(),
+                      4 => const QuarantinePage(),
                       5 => const SettingsPage(),
                       6 => const AboutAuthorPage(),
                       _ => FeatureDashboard(page: page),
